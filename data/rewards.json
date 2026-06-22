@@ -1,0 +1,16 @@
+{
+  "rewards": [
+    { "id": "pu_max_hp", "displayName": "Max HP +20", "rewardType": "passive", "targetId": "max_hp", "value": 20 },
+    { "id": "pu_energy_regen", "displayName": "Energy Regen +20%", "rewardType": "passive", "targetId": "energy_regen", "value": 1.2 },
+    { "id": "pu_basic_dmg", "displayName": "Basic Attack Damage +25%", "rewardType": "passive", "targetId": "basic_dmg", "value": 1.25 },
+    { "id": "pu_dash_cd", "displayName": "Dash Cooldown -20%", "rewardType": "passive", "targetId": "dash_cd", "value": 0.8 },
+    { "id": "pu_shield_dur", "displayName": "Shield Duration +1s", "rewardType": "passive", "targetId": "shield_dur", "value": 1.0 },
+    { "id": "pu_overdrive_dur", "displayName": "Overdrive Duration +2s", "rewardType": "passive", "targetId": "overdrive_dur", "value": 2.0 },
+    { "id": "pu_interrupt_cd", "displayName": "Interrupt Shot Cooldown -25%", "rewardType": "passive", "targetId": "interrupt_cd", "value": 0.75 },
+    { "id": "new_action_repair", "displayName": "New Action: Repair", "rewardType": "new_action", "targetId": "repair", "value": null },
+    { "id": "new_action_drop_mine", "displayName": "New Action: Drop Mine", "rewardType": "new_action", "targetId": "drop_mine", "value": null },
+    { "id": "new_condition_surrounded", "displayName": "New Condition: Surrounded", "rewardType": "new_condition", "targetId": "surrounded", "value": null },
+    { "id": "new_condition_enemy_hp_low", "displayName": "New Condition: Enemy HP Low", "rewardType": "new_condition", "targetId": "enemy_hp_low", "value": null },
+    { "id": "new_condition_boss_phase", "displayName": "New Condition: Boss Phase", "rewardType": "new_condition", "targetId": "boss_phase", "value": null }
+  ]
+}

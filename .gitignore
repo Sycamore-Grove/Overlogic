@@ -1,0 +1,17 @@
+# Godot 4+ specific ignores
+.godot/
+*.tmp
+android/
+builds/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor backups
+*.bak
+*~
+
+# Logs
+*.log

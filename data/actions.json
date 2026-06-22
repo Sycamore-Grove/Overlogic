@@ -1,0 +1,12 @@
+{
+  "actions": [
+    { "id": "basic_attack", "displayName": "Basic Attack", "description": "Fire a bullet at nearest enemy.", "cooldown": 0.4, "energyCost": 0, "range": 8.0, "effectValue": { "dmg": 8, "bulletSpeed": 12.0, "bulletLife": 2.0 }, "teachUnlock": 1 },
+    { "id": "dash_toward", "displayName": "Dash Toward", "description": "Dash toward nearest enemy.", "cooldown": 3.0, "energyCost": 10, "range": 3.0, "effectValue": { "dashDist": 3.0, "invulnTime": 0.15 }, "teachUnlock": 2 },
+    { "id": "dash_away", "displayName": "Dash Away", "description": "Dash away from nearest enemy.", "cooldown": 3.0, "energyCost": 10, "range": 3.0, "effectValue": { "dashDist": 3.0, "invulnTime": 0.15 }, "teachUnlock": 1 },
+    { "id": "shield", "displayName": "Shield", "description": "Short shield reducing damage.", "cooldown": 8.0, "energyCost": 25, "range": 0.0, "effectValue": { "duration": 2.0, "dmgReduce": 0.70 }, "teachUnlock": 1 },
+    { "id": "interrupt_shot", "displayName": "Interrupt Shot", "description": "Shot that interrupts casting enemies.", "cooldown": 5.0, "energyCost": 20, "range": 8.0, "effectValue": { "dmg": 6, "bulletSpeed": 14.0, "bulletLife": 2.0 }, "teachUnlock": 3 },
+    { "id": "overdrive", "displayName": "Overdrive", "description": "Temp buff: atk speed +50%, move speed +25%.", "cooldown": 15.0, "energyCost": 40, "range": 0.0, "effectValue": { "duration": 5.0, "atkSpdMul": 1.5, "moveSpdMul": 1.25 }, "teachUnlock": 4 },
+    { "id": "repair", "displayName": "Repair", "description": "Restore 25 HP.", "cooldown": 12.0, "energyCost": 35, "range": 0.0, "effectValue": { "heal": 25 }, "teachUnlock": null, "rewardUnlock": 3 },
+    { "id": "drop_mine", "displayName": "Drop Mine", "description": "Drop a mine that explodes when enemy near.", "cooldown": 6.0, "energyCost": 20, "range": 0.0, "effectValue": { "triggerRadius": 1.5, "explosionRadius": 2.0, "dmg": 20 }, "teachUnlock": null, "rewardUnlock": 4 }
+  ]
+}
