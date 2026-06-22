@@ -208,7 +208,28 @@ func _build_rule_row(rule: Dictionary) -> void:
 	# condition value editor (depends on type)
 	var cd: Dictionary = GameDatabase.get_condition(rule["conditionId"])
 	var ptype: String = cd.get("parameterType", "none")
-	if ptype != "none":
+	if ptype == "vec2":
+		# Two SpinBoxes: [radius, count] for surrounded etc.
+		var cv: Variant = rule["conditionValue"]
+		var r_val: float = float(cv[0]) if cv is Array and cv.size() >= 1 else float(cd.get("defaultValue", [4.0, 3.0])[0])
+		var c_val: int = int(cv[1]) if cv is Array and cv.size() >= 2 else int(cd.get("defaultValue", [4.0, 3.0])[1])
+		var sb1: SpinBox = SpinBox.new()
+		sb1.custom_minimum_size = Vector2(60.0, 24.0)
+		sb1.min_value = 1
+		sb1.max_value = 20
+		sb1.value = int(r_val)
+		sb1.suffix = "r"
+		var sb2: SpinBox = SpinBox.new()
+		sb2.custom_minimum_size = Vector2(50.0, 24.0)
+		sb2.min_value = 1
+		sb2.max_value = 20
+		sb2.value = c_val
+		sb2.suffix = "n"
+		sb1.value_changed.connect(func(_v): GameState.set_rule_condition_value(rule["id"], [float(sb1.value), int(sb2.value)]))
+		sb2.value_changed.connect(func(_v): GameState.set_rule_condition_value(rule["id"], [float(sb1.value), int(sb2.value)]))
+		row.add_child(sb1)
+		row.add_child(sb2)
+	elif ptype != "none":
 		var val_edit: SpinBox = SpinBox.new()
 		val_edit.custom_minimum_size = Vector2(80.0, 24.0)
 		if ptype == "percent":

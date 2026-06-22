@@ -40,7 +40,7 @@ func _detonate() -> void:
 		if is_instance_valid(e) and not e.is_dead():
 			if global_position.distance_to(e.global_position) <= explosion_radius:
 				e.take_damage(dmg, "mine")
-	AudioManager.play("interrupt_success")
+	AudioManager.play("mine_explosion")
 	if ctx != null and ctx.mines.has(self):
 		ctx.mines.erase(self)
 	queue_free()
