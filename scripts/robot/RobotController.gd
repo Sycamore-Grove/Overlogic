@@ -123,7 +123,10 @@ func _physics_process(delta: float) -> void:
 
 # ---- Action hooks (called by ActionExecutor) ----
 func do_dash(dir: Vector2, dist: float, invuln: float) -> void:
-	dash_velocity = dir.normalized() * (dist / 0.15)  # cover dist over 0.15s
+	var safe_dir: Vector2 = dir.normalized()
+	if safe_dir == Vector2.ZERO:
+		safe_dir = Vector2.RIGHT  # fallback direction if target is on self
+	dash_velocity = safe_dir * (dist / 0.15)  # cover dist over 0.15s
 	dash_timer = 0.15
 	invuln_timer = invuln
 
@@ -151,6 +154,8 @@ func overdrive_atk_speed_mul() -> float:
 
 func fire_bullet(target_pos: Vector2, dmg: float, speed: float, life: float, kind: String, specific_target: Node = null) -> void:
 	var dir: Vector2 = (target_pos - global_position).normalized()
+	if dir == Vector2.ZERO:
+		dir = Vector2.RIGHT  # fallback if target is on self
 	var p: Node = preload("res://scripts/vfx/Projectile.gd").new()
 	p.setup(global_position, dir, speed, life, dmg, kind, true, specific_target)
 	ctx.projectiles.append(p)
