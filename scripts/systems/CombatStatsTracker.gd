@@ -35,8 +35,9 @@ func record_casting_seen() -> void:
 	casting_events_seen += 1
 
 func record_shield_activated(hp_pct: float) -> void:
-	if shield_activated_at_hp < 0.0:
-		shield_activated_at_hp = hp_pct
+	# Record the LATEST activation (most informative for "too late" analysis).
+	# First activation initializes; subsequent ones overwrite.
+	shield_activated_at_hp = hp_pct
 
 func record_enemy_death(enemy_id: String) -> void:
 	# low-hp kill tracking handled by caller via add_kill_at_low_hp

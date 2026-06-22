@@ -120,7 +120,23 @@ func _refresh_header() -> void:
 		var eid: String = s["enemyId"]
 		var ed: Dictionary = GameDatabase.get_enemy(eid)
 		parts.append("%d x %s" % [int(s["count"]), ed.get("displayName", eid)])
-	preview_label.text = "Enemies: " + ", ".join(parts)
+	# Show newly unlocked modules for current teach node (teaching transparency)
+	var unlocks: Array = []
+	for cid in GameState.available_condition_ids():
+		var cd: Dictionary = GameDatabase.get_condition(cid)
+		if int(cd.get("teachUnlock", 0)) == GameState.teach_node:
+			unlocks.append("COND:" + cd.get("displayName", cid))
+	for aid in GameState.available_action_ids():
+		var ad: Dictionary = GameDatabase.get_action(aid)
+		if int(ad.get("teachUnlock", 0)) == GameState.teach_node:
+			unlocks.append("ACTION:" + ad.get("displayName", aid))
+	# Also show reward-granted unlocks
+	for uid in GameState.unlocked_condition_ids:
+		unlocks.append("COND:" + GameDatabase.get_condition(uid).get("displayName", uid))
+	for uid in GameState.unlocked_action_ids:
+		unlocks.append("ACTION:" + GameDatabase.get_action(uid).get("displayName", uid))
+	var unlock_str: String = "  |  Unlocked: " + (", ".join(unlocks) if not unlocks.is_empty() else "none")
+	preview_label.text = "Enemies: " + ", ".join(parts) + unlock_str
 
 func _refresh_stats() -> void:
 	var s: Dictionary = GameState.stats

@@ -12,19 +12,22 @@ func stat(key: String, default: Variant = 0.0) -> Variant:
 	return base.get(key, default)
 
 # Per-action effective cooldown (after passives + overdrive + overlogic).
+# Multipliers express SPEED-up: cooldown = base_cd / mul. Higher mul = shorter cd.
 # robot_ref: optional RobotController to read overdrive/overlogic multipliers.
 func action_cooldown(action_id: String, robot_ref: Node = null) -> float:
 	var base_cd: float = _base_cd(action_id)
 	var mul: float = 1.0
 	if robot_ref != null and is_instance_valid(robot_ref):
-		mul *= robot_ref.overdrive_atk_speed_mul() if robot_ref.has_method("overdrive_atk_speed_mul") else 1.0
-	# overlogic atk cd reduction (only for attack-like actions)
-	if robot_ref != null and robot_ref.ctx != null and robot_ref.ctx.overlogic != null:
-		if action_id == "basic_attack" or action_id == "interrupt_shot":
-			mul *= robot_ref.ctx.overlogic.atk_cd_mul()
-		else:
-			mul *= robot_ref.ctx.overlogic.skill_cd_mul()
-	if mul <= 0.0:
+		if robot_ref.has_method("overdrive_atk_speed_mul"):
+			mul *= robot_ref.overdrive_atk_speed_mul()
+		# overlogic: atk/skill cooldown reduction (mul > 1 = faster)
+		if "ctx" in robot_ref and robot_ref.ctx != null and robot_ref.ctx.overlogic != null:
+			if action_id == "basic_attack" or action_id == "interrupt_shot":
+				# atk_cd_mul returns 0.7 when active; convert to speed-up mul of 1/0.7
+				mul *= 1.0 / robot_ref.ctx.overlogic.atk_cd_mul()
+			else:
+				mul *= 1.0 / robot_ref.ctx.overlogic.skill_cd_mul()
+	if mul <= 0.01:
 		mul = 0.01
 	return base_cd / mul
 

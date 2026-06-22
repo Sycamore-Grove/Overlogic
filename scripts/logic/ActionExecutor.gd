@@ -116,7 +116,7 @@ func _interrupt_shot() -> bool:
 	robot.fire_bullet(target.global_position, float(ev.get("dmg", 6.0)), float(ev.get("bulletSpeed", 14.0)), float(ev.get("bulletLife", 2.0)), "interrupt", target)
 	robot.energy -= energy_cost("interrupt_shot")
 	_start_cd("interrupt_shot")
-	AudioManager.play("basic_attack")
+	AudioManager.play("interrupt_success")
 	return true
 
 func _overdrive() -> bool:

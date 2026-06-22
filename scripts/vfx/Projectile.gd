@@ -59,9 +59,12 @@ func _physics_process(delta: float) -> void:
 				if global_position.distance_to(e.global_position) <= e.body_radius + 0.15:
 					e.take_damage(dmg, kind)
 					if kind == "interrupt":
+						# Only count as success if the target was actually casting
+						var was_casting: bool = e.is_casting()
 						e.interrupt()
-						ctx.tracker.record_interrupt_success()
-						AudioManager.play("interrupt_success")
+						if was_casting:
+							ctx.tracker.record_interrupt_success()
+							AudioManager.play("interrupt_success")
 					_destroy()
 					return
 	else:
