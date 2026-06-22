@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Overlogic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== Main Menu ===== -->
+  <section id="screen-main" class="screen">
+    <div class="title-block">
+      <h1 class="logo">OVERLOGIC</h1>
+      <p class="subtitle">// design the brain, not the hands</p>
+    </div>
+    <div class="menu-buttons">
+      <button id="btn-start" class="btn primary">Start Simulation</button>
+      <button id="btn-how" class="btn">How to Play</button>
+      <button id="btn-exit" class="btn ghost">Exit</button>
+    </div>
+    <div id="how-overlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2>How to Play</h2>
+        <ul>
+          <li>You do not control the robot. You write its <b>logic</b>.</li>
+          <li>Each rule: <span class="kbd">IF condition THEN action PRIORITY n</span></li>
+          <li>Every 0.15s the robot checks all rules, runs the highest-priority valid one.</li>
+          <li>Win battles → pick rewards → strengthen or unlock new modules.</li>
+          <li>Fail → read the debug report → change one rule → win.</li>
+        </ul>
+        <button id="btn-how-close" class="btn primary">Close</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Logic Editor ===== -->
+  <section id="screen-editor" class="screen hidden">
+    <header class="editor-header">
+      <div class="battle-info">
+        <span class="label">Next Battle</span>
+        <span id="ed-battle-name" class="value">—</span>
+        <span id="ed-battle-preview" class="muted">—</span>
+      </div>
+      <div class="teach-info">
+        <span class="label">Directive Layer</span>
+        <span id="ed-teach" class="value">1</span>
+      </div>
+    </header>
+
+    <div class="editor-grid">
+      <aside class="panel" id="panel-conditions">
+        <h3>Available Conditions</h3>
+        <ul id="cond-list" class="module-list"></ul>
+      </aside>
+
+      <main class="panel panel-rules" id="panel-rules">
+        <h3>Active Rules <button id="btn-add-rule" class="btn small">+ Add Rule</button></h3>
+        <div id="rule-form" class="rule-form hidden">
+          <select id="f-cond"></select>
+          <span id="f-cond-param"></span>
+          <span class="muted">THEN</span>
+          <select id="f-act"></select>
+          <input id="f-prio" type="number" min="0" max="100" value="50" title="priority">
+          <button id="f-add" class="btn small primary">Add</button>
+          <button id="f-cancel" class="btn small ghost">Cancel</button>
+        </div>
+        <ul id="rule-list" class="rule-list"></ul>
+      </main>
+
+      <aside class="panel" id="panel-actions">
+        <h3>Available Actions</h3>
+        <ul id="act-list" class="module-list"></ul>
+      </aside>
+    </div>
+
+    <footer class="editor-footer">
+      <div id="unit-stats" class="unit-stats"></div>
+      <button id="btn-run" class="btn primary big">Run Simulation ▶</button>
+    </footer>
+  </section>
+
+  <!-- ===== Combat ===== -->
+  <section id="screen-combat" class="screen hidden">
+    <div class="combat-top">
+      <div class="hud-left">
+        <div class="bar"><span>HP</span><div class="bar-track"><div id="hp-fill" class="bar-fill hp"></div><span id="hp-text" class="bar-text"></span></div></div>
+        <div class="bar"><span>EN</span><div class="bar-track"><div id="en-fill" class="bar-fill en"></div><span id="en-text" class="bar-text"></span></div></div>
+        <div class="bar"><span>OL</span><div class="bar-track"><div id="ol-fill" class="bar-fill ol"></div><span id="ol-text" class="bar-text"></span></div></div>
+      </div>
+      <div class="hud-center">
+        <div id="current-logic" class="current-logic">Current Logic: —</div>
+        <div id="wave-info" class="wave-info">Wave 1/2</div>
+        <div id="combat-timer" class="muted">0.0s</div>
+      </div>
+      <div class="hud-right">
+        <button id="btn-pause" class="btn small">Pause</button>
+        <button id="btn-speed" class="btn small">Speed x1</button>
+        <button id="btn-quit" class="btn small ghost">Quit</button>
+      </div>
+    </div>
+    <div id="boss-bar-wrap" class="boss-bar hidden">
+      <span id="boss-name">Protocol Warden</span>
+      <div class="bar-track boss"><div id="boss-fill" class="bar-fill boss"></div></div>
+    </div>
+    <canvas id="arena" width="720" height="720"></canvas>
+    <div id="phase-toast" class="phase-toast hidden"></div>
+  </section>
+
+  <!-- ===== Reward ===== -->
+  <section id="screen-reward" class="screen hidden">
+    <h2>Protocol Upgrade</h2>
+    <p class="muted">Choose One</p>
+    <div id="reward-options" class="reward-grid"></div>
+  </section>
+
+  <!-- ===== Post Battle Report ===== -->
+  <section id="screen-report" class="screen hidden">
+    <h2 class="fail-title">Simulation Failed</h2>
+    <p class="muted">Your logic failed. Debug and retry.</p>
+    <div class="report-grid">
+      <div class="report-card"><h3>Damage Report</h3><ul id="rep-damage"></ul></div>
+      <div class="report-card"><h3>Logic Report</h3><ul id="rep-logic"></ul></div>
+      <div class="report-card"><h3>Suggested Fix</h3><ul id="rep-suggest"></ul></div>
+    </div>
+    <div class="report-actions">
+      <button id="btn-retry" class="btn primary">Retry Battle</button>
+      <button id="btn-edit" class="btn">Edit Logic</button>
+      <button id="btn-restart" class="btn ghost">Restart Run</button>
+    </div>
+  </section>
+
+  <!-- ===== Victory ===== -->
+  <section id="screen-victory" class="screen hidden">
+    <h1 class="logo">SIMULATION COMPLETE</h1>
+    <p class="subtitle">// your logic survived</p>
+    <p class="muted">The machine learned from you.</p>
+    <button id="btn-victory-menu" class="btn primary big">Return to Menu</button>
+  </section>
+
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
