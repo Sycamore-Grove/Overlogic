@@ -75,9 +75,13 @@ export class BattleHUD {
     const txt = overlogicActive && rule ? `Overlogic Active: ${label}` : `Current Logic: ${label}`;
     this.curLogic.textContent = txt;
     this.curLogic.classList.toggle('overlogic', !!overlogicActive && !!rule);
-    // flash effect on rule switch
+    // flash effect on rule switch (DESIGN.md §13.3: 0.2s highlight)
     if (rule && this._lastRuleId !== rule.id) {
       this._lastRuleId = rule.id;
+      this.curLogic.classList.remove('flash');
+      // force reflow so the class re-applies cleanly on rapid switches
+      void this.curLogic.offsetWidth;
+      this.curLogic.classList.add('flash');
     }
   }
 

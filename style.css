@@ -82,7 +82,9 @@ body{
 .bar-fill.ol{background:linear-gradient(90deg,#c47bff,#ff4bd8)}
 .bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;text-shadow:0 0 3px #000}
 .hud-center{text-align:center}
-.current-logic{color:var(--accent);font-size:14px;letter-spacing:1px;min-height:20px}
+.current-logic{color:var(--accent);font-size:14px;letter-spacing:1px;min-height:20px;transition:background .2s}
+.current-logic.flash{background:rgba(75,225,255,0.25);border-radius:2px;animation:logicflash .2s ease-out}
+@keyframes logicflash{0%{background:rgba(75,225,255,0.5)}100%{background:rgba(75,225,255,0)}}
 .current-logic.overlogic{color:var(--overlogic);animation:glitch .3s infinite}
 @keyframes glitch{0%,100%{transform:translateX(0)}33%{transform:translateX(-1px)}66%{transform:translateX(1px)}}
 .wave-info{color:var(--warn2);font-size:12px;letter-spacing:2px;margin-top:2px}
