@@ -110,11 +110,14 @@ func advance_teach_node() -> void:
 
 # Called when a battle is won. Apply reward, advance progress, possibly advance teach.
 func on_battle_won(reward_id: String) -> void:
-	var reward: Dictionary = GameDatabase.get_reward(reward_id)
-	if reward.is_empty():
-		push_error("GameState: unknown reward %s" % reward_id)
-	else:
-		_apply_reward(reward)
+	# Empty reward_id is valid: used by GameManager for the final boss battle
+	# (no reward screen, straight to victory). Only apply reward if one was chosen.
+	if reward_id != "":
+		var reward: Dictionary = GameDatabase.get_reward(reward_id)
+		if reward.is_empty():
+			push_error("GameState: unknown reward %s" % reward_id)
+		else:
+			_apply_reward(reward)
 	# Advance teach node after battles 1,2,3 (teachUnlockAfter field on battle data).
 	var battle: Dictionary = GameDatabase.get_battle(current_battle_index)
 	var tua: Variant = battle.get("teachUnlockAfter", null)
