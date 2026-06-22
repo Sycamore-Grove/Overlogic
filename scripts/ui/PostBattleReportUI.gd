@@ -18,7 +18,16 @@ func _build_ui() -> void:
 	title.add_theme_font_size_override("font", 40)
 	title.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 	add_child(title)
+	# Defensive: if no report data, show fallback message + buttons only
 	var report: Dictionary = GameState.last_report
+	if report.is_empty():
+		var empty: Label = Label.new()
+		empty.text = "No telemetry recovered."
+		empty.position = Vector2(60.0, 100.0)
+		empty.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		add_child(empty)
+		_add_buttons()
+		return
 	var builder: RefCounted = preload("res://scripts/systems/PostBattleReportBuilder.gd").new()
 	var built: Dictionary = builder.build(report, GameState.available_action_ids())
 	# Damage section
@@ -66,6 +75,9 @@ func _build_ui() -> void:
 		l.add_theme_color_override("font_color", Color(0.95, 0.9, 0.6))
 		add_child(l)
 		y += 22.0
+	_add_buttons()
+
+func _add_buttons() -> void:
 	# Buttons
 	var bw: float = 180.0
 	var bx: float = 1280.0 / 2.0 - (3.0 * bw + 2.0 * 20.0) / 2.0

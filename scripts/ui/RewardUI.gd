@@ -34,6 +34,17 @@ func _populate() -> void:
 	var battle: Dictionary = GameDatabase.get_battle(GameState.current_battle_index)
 	var rm: RefCounted = preload("res://scripts/systems/RewardManager.gd").new()
 	options = rm.build_options(battle)
+	if options.is_empty():
+		# Defensive: no rewards available (e.g. boss battle) — offer a continue button
+		var cont: Button = Button.new()
+		cont.text = "Proceed\n\nNo upgrade available"
+		cont.position = Vector2(470.0, 220.0)
+		cont.size = Vector2(340.0, 240.0)
+		cont.add_theme_font_size_override("font", 18)
+		cont.pressed.connect(func(): _on_pick(""))
+		add_child(cont)
+		option_buttons.append(cont)
+		return
 	for i in range(options.size()):
 		var rid: String = options[i]
 		var r: Dictionary = GameDatabase.get_reward(rid)
