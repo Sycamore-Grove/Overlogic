@@ -54,15 +54,19 @@ func _tick_behavior(dt: float) -> void:
 		"charging":
 			state = "charging"
 			var step: float = charge_speed * dt
+			var prev_pos: Vector2 = global_position
 			global_position += charge_dir * step
-			global_position = ctx.clamp_to_arena(global_position)
-			charge_remaining -= step
+			var clamped: Vector2 = ctx.clamp_to_arena(global_position)
+			var moved: float = clamped.distance_to(prev_pos)
+			global_position = clamped
+			charge_remaining -= moved
 			# contact with robot
 			if global_position.distance_to(robot_pos) <= body_radius + ctx.robot.body_radius:
 				ctx.robot.take_damage(damage, enemy_id)
 				charge_state = "idle"
 				attack_timer = attack_cooldown
-			elif charge_remaining <= 0.0 or global_position == ctx.clamp_to_arena(global_position):
+			elif charge_remaining <= 0.0 or moved < step * 0.5:
+				# ran out of charge distance OR hit a wall (moved much less than intended)
 				charge_state = "idle"
 				attack_timer = attack_cooldown
 

@@ -39,6 +39,7 @@ var rules: Array = []
 
 # ---- Last battle result (for report) ----
 var last_report: Dictionary = {}
+var _rule_counter: int = 0
 
 func _ready() -> void:
 	reset_run()
@@ -75,8 +76,9 @@ func _init_default_rules() -> void:
 	_advance_teach_rules_to(1)
 
 func _new_rule(cond_id: String, cond_val: Variant, act_id: String, prio: int) -> Dictionary:
+	_rule_counter += 1
 	return {
-		"id": "rule_%d" % (rules.size() + 1 + randi() % 100000),
+		"id": "rule_%d" % _rule_counter,
 		"conditionId": cond_id,
 		"conditionValue": cond_val,
 		"actionId": act_id,

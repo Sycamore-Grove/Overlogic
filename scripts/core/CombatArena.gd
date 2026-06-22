@@ -208,6 +208,14 @@ func _on_robot_died() -> void:
 func _on_enemy_died() -> void:
 	# remove from ctx.enemies handled by queue_free; we just clean list
 	ctx.enemies = ctx.enemies.filter(func(e): return is_instance_valid(e) and not e.is_dead())
+	# Boss death = instant victory (ignore any summoned minions still alive)
+	if ctx.boss != null and not is_instance_valid(ctx.boss) and not battle_ended:
+		# clear remaining minions so live_enemies() == 0 triggers win check naturally
+		for e in ctx.enemies:
+			if is_instance_valid(e) and not e.is_dead():
+				e.queue_free()
+		ctx.enemies.clear()
+		ctx.boss = null
 
 func _on_boss_phase_changed(p: int) -> void:
 	if phase_label != null:

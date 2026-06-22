@@ -159,9 +159,12 @@ func _summon_crawler() -> void:
 			break
 		var crawler_data: Dictionary = GameDatabase.get_enemy("crawler")
 		var crawler: Node = preload("res://scripts/enemies/CrawlerEnemy.gd").new()
+		get_parent().add_child(crawler)
 		crawler.init(crawler_data, ctx)
 		var angle: float = randf() * TAU
-		crawler.global_position = global_position + Vector2(cos(angle), sin(angle)) * 1.5
+		crawler.global_position = ctx.clamp_to_arena(global_position + Vector2(cos(angle), sin(angle)) * 1.5)
 		ctx.enemies.append(crawler)
-		get_parent().add_child(crawler)
+		# connect died signal so ctx.enemies is cleaned when summoned crawler dies
+		if crawler.has_signal("died") and get_parent().has_method("_on_enemy_died"):
+			crawler.died.connect(get_parent()._on_enemy_died)
 		live_crawlers += 1

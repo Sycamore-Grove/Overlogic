@@ -87,7 +87,7 @@ func _physics_process(delta: float) -> void:
 	if overdrive_timer <= 0.0:
 		energy = minf(max_energy, energy + float(stats.stat("energy_regen", 8.0)) * dt)
 	# Energy overflow tracking
-	if energy >= max_energy - 0.01:
+	if energy >= max_energy - 0.01 and ctx != null and ctx.tracker != null:
 		ctx.tracker.record_energy_overflow(dt)
 	# Cooldowns
 	if invuln_timer > 0.0:
@@ -117,7 +117,8 @@ func _physics_process(delta: float) -> void:
 	# Move with clamping to arena
 	var next_pos: Vector2 = global_position + velocity * dt
 	global_position = ctx.clamp_to_arena(next_pos)
-	move_intent = Vector2.ZERO
+	# NOTE: move_intent is NOT cleared here — it persists between ticks so the
+	# robot keeps moving smoothly. ActionExecutor overwrites it each logic tick.
 	energy_changed.emit(energy, max_energy)
 
 # ---- Action hooks (called by ActionExecutor) ----
@@ -168,7 +169,8 @@ func take_damage(amount: float, source_kind: String) -> void:
 	if shield_timer > 0.0:
 		actual = amount * (1.0 - shield_reduce)
 	hp -= actual
-	ctx.tracker.record_damage_taken(amount, source_kind)
+	if ctx != null and ctx.tracker != null:
+		ctx.tracker.record_damage_taken(amount, source_kind)
 	if hp <= 0.0 and not dead:
 		hp = 0.0
 		dead = true

@@ -32,7 +32,8 @@ func setup(p_robot: Node, p_ctx: RefCounted, p_executor: Node, p_tracker: RefCou
 func _process(delta: float) -> void:
 	if robot == null or not is_instance_valid(robot) or robot.is_dead():
 		return
-	var scaled: float = delta * speed_mul
+	var speed: float = ctx.time_speed if ctx != null else 1.0
+	var scaled: float = delta * speed
 	tick_timer += scaled
 	# overlogic fast-switch window
 	recent_rule_window += scaled
