@@ -4,6 +4,10 @@
 android/
 builds/
 
+# Temp scripts used during development
+_*.bat
+_*.sh
+
 # OS
 .DS_Store
 Thumbs.db
