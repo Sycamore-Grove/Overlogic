@@ -30,6 +30,8 @@
 
 html, body {
   height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 body {
   background-color: var(--bg);
@@ -70,6 +72,10 @@ body {
 #app {
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,6 +91,7 @@ body {
   padding: 24px;
   gap: 20px;
   position: relative;
+  overflow: hidden;
   transition: opacity 0.3s ease-in-out;
 }
 
@@ -728,6 +735,7 @@ body {
   gap: 10px;
   overflow: hidden;
   position: relative;
+  contain: strict;
 }
 
 #screen-combat::before {
@@ -877,18 +885,20 @@ body {
   100% { background: transparent; }
 }
 
+/* glitch: use only transform (no skew) + will-change to keep on compositor layer */
 .current-logic.overlogic {
   color: var(--overlogic);
   text-shadow: 0 0 15px rgba(181, 92, 255, 0.8);
+  will-change: transform;
   animation: glitch 0.2s infinite;
 }
 
 @keyframes glitch {
-  0%, 100% { transform: translate(0) skew(0deg); }
-  20% { transform: translate(-2px, 1px) skew(-2deg); }
-  40% { transform: translate(1px, -1px) skew(1deg); }
-  60% { transform: translate(-1px, -1px) skew(-1deg); }
-  80% { transform: translate(2px, 2px) skew(2deg); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20%       { transform: translate3d(-2px, 1px, 0); }
+  40%       { transform: translate3d(1px, -1px, 0); }
+  60%       { transform: translate3d(-1px, -1px, 0); }
+  80%       { transform: translate3d(2px, 2px, 0); }
 }
 
 .wave-info {
