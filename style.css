@@ -418,23 +418,23 @@ body {
 
 .rule-row {
   display: grid;
-  grid-template-columns: 20px 65px 1.5fr 1fr 1.5fr 1.2fr 1fr 60px;
+  grid-template-columns: 20px 48px 2.2fr 68px 2.2fr 1.8fr 82px 55px;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.01);
-  font-size: 13px;
+  font-size: 12px;
   border-radius: 4px;
   transition: all 0.2s;
 }
 
 .rule-header {
   display: grid;
-  grid-template-columns: 20px 65px 1.5fr 1fr 1.5fr 1.2fr 1fr 60px;
+  grid-template-columns: 20px 48px 2.2fr 68px 2.2fr 1.8fr 82px 55px;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 6px 12px;
   font-size: 10px;
   color: var(--muted);
   text-transform: uppercase;
@@ -492,15 +492,42 @@ body {
   font-weight: 600;
 }
 
+.cond-wrap, .cond2-wrap {
+  min-width: 0;
+}
+
 .rule-param {
   color: var(--accent);
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
-.rule-row select, .rule-row input, .rule-form select, .rule-form input {
+.rule-row select, .rule-row input {
+  font-family: inherit;
+  font-size: 11px;
+  background: #020408;
+  color: var(--txt);
+  border: 1px solid var(--line);
+  padding: 4px 6px;
+  height: 26px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 0; /* allows element to shrink within grid column */
+}
+
+.rule-row input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rule-form select, .rule-form input {
   font-family: inherit;
   font-size: 12px;
   background: #020408;
