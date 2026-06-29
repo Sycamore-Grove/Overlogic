@@ -402,14 +402,6 @@ export class LogicEditorUI {
     }
     row.appendChild(tarSel);
 
-    // 7. Delete Button
-    const del = document.createElement('button');
-    del.className = 'del'; del.textContent = '✕'; del.title = 'delete';
-    del.addEventListener('click', () => {
-      GameState.removeRule(r.id);
-      AudioManager.play('rule_add');
-    });
-    
     // Warnings alert icon
     const warnings = this._activeWarnings && this._activeWarnings.get(r.id);
     if (warnings && warnings.length > 0) {
