@@ -22,6 +22,19 @@ async function main() {
   const reportUI = new PostBattleReportUI();
   const victoryUI = new VictoryUI();
 
+  // Bulletproof viewport scroll locks to prevent browser auto-scroll / bouncing behaviors
+  window.addEventListener('scroll', () => {
+    window.scrollTo(0, 0);
+  }, { passive: true });
+
+  const screenCombat = document.getElementById('screen-combat');
+  if (screenCombat) {
+    screenCombat.addEventListener('scroll', () => {
+      screenCombat.scrollTop = 0;
+      screenCombat.scrollLeft = 0;
+    }, { passive: true });
+  }
+
   const canvas = document.getElementById('arena');
   let arena = null;
 

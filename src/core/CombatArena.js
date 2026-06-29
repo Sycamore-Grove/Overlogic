@@ -60,8 +60,6 @@ export class CombatArena {
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = 720 * dpr;
     this.canvas.height = 720 * dpr;
-    this.canvas.style.width = '720px';
-    this.canvas.style.height = '720px';
     this.dpr = dpr;
 
     this.battle = battle;
