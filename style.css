@@ -921,6 +921,7 @@ body {
   text-align: center;
   margin-top: 6px;
   z-index: 15;
+  will-change: transform, opacity;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -1398,6 +1399,7 @@ body {
   font-size: 36px;
   margin-bottom: 12px;
   filter: drop-shadow(0 0 12px rgba(0, 210, 255, 0.5));
+  will-change: transform;
   animation: iconPulse 2s ease-in-out infinite alternate;
 }
 
