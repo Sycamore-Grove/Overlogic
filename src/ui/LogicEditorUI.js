@@ -242,6 +242,7 @@ export class LogicEditorUI {
       row.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', r.id);
+      this._draggedRuleId = r.id; // Store dragged rule ID for priority preservation
     });
     row.addEventListener('dragend', () => {
       row.removeAttribute('draggable');
@@ -446,7 +447,46 @@ export class LogicEditorUI {
 
       row.appendChild(warnSpan);
     }
-    row.appendChild(del);
+    
+    // 7. Actions Container (Duplicate + Delete)
+    const actionsContainer = document.createElement('span');
+    actionsContainer.style.display = 'flex';
+    actionsContainer.style.alignItems = 'center';
+    actionsContainer.style.justifyContent = 'center';
+    actionsContainer.style.gap = '8px';
+
+    // 7.1 Clone Button
+    const clone = document.createElement('button');
+    clone.className = 'clone-btn'; clone.innerHTML = '📋'; clone.title = 'Duplicate Rule';
+    clone.style.background = 'none';
+    clone.style.border = 'none';
+    clone.style.cursor = 'pointer';
+    clone.style.color = 'var(--muted)';
+    clone.style.fontSize = '12px';
+    clone.style.padding = '2px';
+    clone.style.transition = 'color 0.2s, transform 0.2s';
+    clone.addEventListener('mouseenter', () => { clone.style.color = 'var(--accent2)'; clone.style.transform = 'scale(1.15)'; });
+    clone.addEventListener('mouseleave', () => { clone.style.color = 'var(--muted)'; clone.style.transform = 'scale(1)'; });
+    clone.addEventListener('click', () => {
+      GameState.pushUndoState();
+      GameState.addRule(
+        r.conditionId, r.conditionValue, r.actionId, Math.max(0, r.priority - 1),
+        r.conditionId2, r.conditionValue2, r.operator, r.targetPriority
+      );
+      AudioManager.play('rule_add');
+    });
+    actionsContainer.appendChild(clone);
+
+    // 7.2 Delete Button
+    const del = document.createElement('button');
+    del.className = 'del'; del.textContent = '✕'; del.title = 'delete';
+    del.addEventListener('click', () => {
+      GameState.removeRule(r.id);
+      AudioManager.play('rule_add');
+    });
+    actionsContainer.appendChild(del);
+
+    row.appendChild(actionsContainer);
 
     return row;
   }
@@ -540,24 +580,42 @@ export class LogicEditorUI {
   }
 
   _saveNewPriorities() {
+    const draggedId = this._draggedRuleId;
+    if (!draggedId) return;
+    this._draggedRuleId = null;
+
     const rows = [...this.ruleList.querySelectorAll('.rule-row')];
-    const N = rows.length;
-    if (N === 0) return;
-    
+    const index = rows.findIndex(row => row.dataset.id === draggedId);
+    if (index === -1) return;
+
+    const draggedRule = GameState.rules.find(r => r.id === draggedId);
+    if (!draggedRule) return;
+
+    let prioAbove = null;
+    let prioBelow = null;
+
+    if (index > 0) {
+      const rowAbove = rows[index - 1];
+      const ruleAbove = GameState.rules.find(r => r.id === rowAbove.dataset.id);
+      if (ruleAbove) prioAbove = ruleAbove.priority;
+    }
+    if (index < rows.length - 1) {
+      const rowBelow = rows[index + 1];
+      const ruleBelow = GameState.rules.find(r => r.id === rowBelow.dataset.id);
+      if (ruleBelow) prioBelow = ruleBelow.priority;
+    }
+
+    let newPrio = draggedRule.priority;
+    if (prioAbove !== null && prioBelow !== null) {
+      newPrio = Math.round((prioAbove + prioBelow) / 2);
+    } else if (prioBelow !== null) {
+      newPrio = Math.min(100, prioBelow + 5);
+    } else if (prioAbove !== null) {
+      newPrio = Math.max(0, prioAbove - 5);
+    }
+
     GameState.pushUndoState();
-    
-    rows.forEach((row, index) => {
-      const ruleId = row.dataset.id;
-      let newPrio = 100;
-      if (N > 1) {
-        newPrio = 100 - Math.round((index / (N - 1)) * 90);
-      }
-      const rule = GameState.rules.find(r => r.id === ruleId);
-      if (rule) {
-        rule.priority = newPrio;
-      }
-    });
-    
+    draggedRule.priority = newPrio;
     GameState.saveToStorage();
     GameState._emit('rules');
     AudioManager.play('button_click');

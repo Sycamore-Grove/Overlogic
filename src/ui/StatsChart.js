@@ -9,17 +9,18 @@ export function drawStatsChart(canvas, report) {
   // High DPI / Retina Support
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const cssW = rect.width || 680;
-  const cssH = rect.height || 200;
+  const W = rect.width || 680;
+  
+  // Responsive layout: Stack vertically on small screens
+  const isMobile = W < 600;
+  const H = isMobile ? 380 : 200;
 
-  canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
-  canvas.style.width = `${cssW}px`;
-  canvas.style.height = `${cssH}px`;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = `${W}px`;
+  canvas.style.height = `${H}px`;
 
   g.scale(dpr, dpr);
-  const W = cssW;
-  const H = cssH;
 
   // Clear background
   g.fillStyle = '#0a0d1a';
@@ -35,22 +36,23 @@ export function drawStatsChart(canvas, report) {
     g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
   }
 
-  // Split canvas into two columns: Left = Actions, Right = Damage
-  const colW = W / 2;
+  // Split calculations
+  const colW = isMobile ? W : W / 2;
+  const maxActions = 4;
   
   // Font settings
   g.font = '11px monospace';
   g.textAlign = 'left';
   g.textBaseline = 'middle';
 
-  // --- 1. Draw Action Usage (Left Column) ---
+  // --- 1. Draw Action Usage ---
   g.fillStyle = '#00d2ff';
   g.font = 'bold 12px monospace';
-  g.fillText('ACTION USAGE', 20, 20);
+  const actionTitleY = 20;
+  g.fillText('ACTION USAGE', 20, actionTitleY);
   
   g.font = '10px monospace';
   const actions = Object.entries(report.action_usage || {}).sort((a, b) => b[1] - a[1]);
-  const maxActions = 4;
   const slicedActions = actions.slice(0, maxActions);
   const maxActionCount = Math.max(1, ...actions.map(a => a[1]));
 
@@ -86,30 +88,35 @@ export function drawStatsChart(canvas, report) {
       g.fillStyle = '#ffffff';
       g.fillText(`x${count}`, 115 + barW, ay);
 
-      ay += 36;
+      ay += isMobile ? 30 : 36;
     }
   }
 
-  // --- 2. Draw Damage Taken (Right Column) ---
+  // --- 2. Draw Damage Taken ---
   g.fillStyle = '#ff4757';
   g.font = 'bold 12px monospace';
-  g.fillText('DAMAGE BY SOURCE', colW + 20, 20);
+  const dmgTitleX = isMobile ? 20 : colW + 20;
+  const dmgTitleY = isMobile ? 200 : 20;
+  g.fillText('DAMAGE BY SOURCE', dmgTitleX, dmgTitleY);
 
   g.font = '10px monospace';
   const damageSources = Object.entries(report.damage_by_source || {}).sort((a, b) => b[1] - a[1]);
   const maxDmg = Math.max(1, ...damageSources.map(d => d[1]));
   
-  let dy = 50;
+  let dy = isMobile ? 230 : 50;
+  const dmgLabelX = isMobile ? 20 : colW + 20;
+  const dmgBarX = isMobile ? 110 : colW + 110;
+
   if (damageSources.length === 0) {
     g.fillStyle = '#888';
-    g.fillText('(No damage taken)', colW + 20, dy);
+    g.fillText('(No damage taken)', dmgLabelX, dy);
   } else {
     for (const [source, dmg] of damageSources.slice(0, maxActions)) {
       const enemy = GameDatabase.getEnemy(source);
       const name = enemy ? enemy.displayName : source;
 
       g.fillStyle = '#8892b0';
-      g.fillText(name.toUpperCase(), colW + 20, dy);
+      g.fillText(name.toUpperCase(), dmgLabelX, dy);
 
       // Draw bar
       const barMaxW = colW - 140;
@@ -117,21 +124,21 @@ export function drawStatsChart(canvas, report) {
       
       // Bar background
       g.fillStyle = 'rgba(255, 71, 87, 0.1)';
-      g.fillRect(colW + 110, dy - 6, barMaxW, 12);
+      g.fillRect(dmgBarX, dy - 6, barMaxW, 12);
 
       // Glowing bar fill
       g.save();
       g.fillStyle = '#ff4757';
       g.shadowColor = '#ff4757';
       g.shadowBlur = 8;
-      g.fillRect(colW + 110, dy - 6, barW, 12);
+      g.fillRect(dmgBarX, dy - 6, barW, 12);
       g.restore();
 
       // Dmg text
       g.fillStyle = '#ffffff';
-      g.fillText(`${Math.round(dmg)} DMG`, colW + 115 + barW, dy);
+      g.fillText(`${Math.round(dmg)} DMG`, dmgBarX + 5 + barW, dy);
 
-      dy += 36;
+      dy += isMobile ? 30 : 36;
     }
   }
 }

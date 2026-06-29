@@ -14,6 +14,14 @@ export class VictoryUI {
       AudioManager.play('button_click');
       GameManager.goMainMenu();
     });
+
+    // Redraw victory charts on window resize to ensure high-DPI canvas looks sharp
+    window.addEventListener('resize', () => {
+      if (this.el && !this.el.classList.contains('hidden')) {
+        const report = GameState.lastReport || {};
+        drawStatsChart(this.canvas, report);
+      }
+    });
   }
 
   show() {

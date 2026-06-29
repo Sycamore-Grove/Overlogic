@@ -1,6 +1,4 @@
 // PostBattleReportBuilder.js — deterministic report text from a tracker snapshot.
-// Mirrors scripts/systems/PostBattleReportBuilder.gd.
-
 import { GameDatabase } from '../core/GameDatabase.js';
 
 export function buildReport(report, availableActionIds) {
@@ -45,15 +43,38 @@ export function buildReport(report, availableActionIds) {
   const energyLine = `- Energy overflowed for ${report.energy_overflow_time.toFixed(1)}s total`;
   const deathLine = `- Death: HP=${Math.round(report.death_hp)}, Energy=${Math.round(report.death_energy)}, nearby enemies=${report.death_nearby_enemy_count}`;
 
-  // Suggestions (deterministic)
+  // Suggestions (deterministic with auto-add metadata)
   const suggestions = [];
-  if (report.interrupt_misses >= 2) suggestions.push('Add IF Enemy Casting THEN Interrupt Shot');
-  if (report.death_nearby_enemy_count >= 3) suggestions.push('Add IF Surrounded THEN Dash Away');
-  if (report.shield_activated_at_hp < 0 || report.shield_activated_at_hp < 0.15)
-    suggestions.push('Raise priority of defensive rules');
-  if (report.energy_overflow_time > 5 && availableActionIds.includes('overdrive'))
-    suggestions.push('Add IF Energy High THEN Overdrive');
-  if (suggestions.length === 0) suggestions.push('Try increasing dash priority to keep distance');
+  
+  if (report.interrupt_misses >= 2) {
+    suggestions.push({
+      text: 'Add IF Enemy Casting THEN Interrupt Shot',
+      rule: { conditionId: 'enemy_casting', conditionValue: null, actionId: 'interrupt_shot', priority: 90 }
+    });
+  }
+  if (report.death_nearby_enemy_count >= 3) {
+    suggestions.push({
+      text: 'Add IF Surrounded THEN Dash Away',
+      rule: { conditionId: 'surrounded', conditionValue: [4, 3], actionId: 'dash_away', priority: 85 }
+    });
+  }
+  if (report.shield_activated_at_hp < 0 || report.shield_activated_at_hp < 0.15) {
+    suggestions.push({
+      text: 'Raise priority of defensive rules (e.g. Shield or Repair)'
+    });
+  }
+  if (report.energy_overflow_time > 5 && availableActionIds.includes('overdrive')) {
+    suggestions.push({
+      text: 'Add IF Energy High THEN Overdrive',
+      rule: { conditionId: 'energy_high', conditionValue: 0.8, actionId: 'overdrive', priority: 60 }
+    });
+  }
+  
+  if (suggestions.length === 0) {
+    suggestions.push({
+      text: 'Try increasing dash priority to keep distance'
+    });
+  }
 
   return {
     damage_lines: damageLines,
