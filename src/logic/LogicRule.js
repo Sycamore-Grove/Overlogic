@@ -5,19 +5,30 @@ export function sortDesc(rules) {
   return [...rules].sort((a, b) => b.priority - a.priority);
 }
 
+export function formatCond(condId, val, db) {
+  if (!condId) return '';
+  const c = db.getCondition(condId);
+  const cName = c ? c.displayName : condId;
+  let vStr = '';
+  if (typeof val === 'number') {
+    vStr = c && c.parameterType === 'percent' ? ` ${Math.round(val * 100)}%` : ` ${val.toFixed(1)}`;
+  } else if (Array.isArray(val)) {
+    vStr = ` (${val[0].toFixed(1)},${val[1].toFixed(0)})`;
+  }
+  return `${cName}${vStr}`;
+}
+
 // Format a rule for HUD display: "[P{n}] IF Cond val THEN Action"
 export function formatLabel(rule, db) {
   if (!rule || !rule.conditionId) return 'Idle: default behavior';
-  const c = db.getCondition(rule.conditionId);
-  const a = db.getAction(rule.actionId);
-  const cName = c ? c.displayName : rule.conditionId;
-  const aName = a ? a.displayName : rule.actionId;
-  let vStr = '';
-  const v = rule.conditionValue;
-  if (typeof v === 'number') {
-    vStr = c && c.parameterType === 'percent' ? ` ${Math.round(v * 100)}%` : ` ${v.toFixed(1)}`;
-  } else if (Array.isArray(v)) {
-    vStr = ` (${v[0].toFixed(1)},${v[1].toFixed(0)})`;
+  const cond1Str = formatCond(rule.conditionId, rule.conditionValue, db);
+  let condStr = cond1Str;
+  if (rule.operator === 'and' && rule.conditionId2) {
+    const cond2Str = formatCond(rule.conditionId2, rule.conditionValue2, db);
+    condStr = `${cond1Str} AND ${cond2Str}`;
   }
-  return `[P${rule.priority|0}] IF ${cName}${vStr} THEN ${aName}`;
+  const a = db.getAction(rule.actionId);
+  const aName = a ? a.displayName : rule.actionId;
+  const targetStr = rule.targetPriority && rule.targetPriority !== 'nearest' ? ` (${rule.targetPriority})` : '';
+  return `[P${rule.priority|0}] IF ${condStr} THEN ${aName}${targetStr}`;
 }

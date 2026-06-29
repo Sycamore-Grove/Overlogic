@@ -2,6 +2,7 @@
 // Mirrors scripts/vfx/Projectile.gd. Pure class with tick + draw.
 
 import { AudioManager } from '../systems/AudioManager.js';
+import { spawnBurst, spawnEngineTrail, spawnText } from './ParticleSystem.js';
 
 export class Projectile {
   constructor() {
@@ -38,6 +39,13 @@ export class Projectile {
     this.x += this.dir.x * this.speed * dt;
     this.y += this.dir.y * this.speed * dt;
     this.life -= dt;
+
+    // Spawn flight trail particles
+    const trailColor = this.fromPlayer
+      ? (this.kind === 'basic' ? 'rgba(0, 210, 255, 0.25)' : 'rgba(255, 226, 75, 0.3)')
+      : (this.kind === 'boss_enraged' ? 'rgba(210, 62, 255, 0.25)' : 'rgba(255, 106, 77, 0.25)');
+    spawnEngineTrail(this.ctx, this.x, this.y, trailColor, this.fromPlayer ? 0.08 : (this.kind === 'boss_enraged' ? 0.15 : 0.12));
+
     if (this.life <= 0) { this._destroy(); return; }
     if (this.fromPlayer) {
       for (const e of this.ctx.enemies) {
@@ -45,11 +53,24 @@ export class Projectile {
         if (Math.hypot(e.x - this.x, e.y - this.y) <= e.bodyRadius + 0.15) {
           const wasCasting = e.isCasting();
           e.takeDamage(this.dmg, this.kind);
+          
+          // Heavy Impact Stun check
+          const r = this.ctx.robot;
+          if (r && r.stats && r.stats.stat('heavy_impact', 0) > 0) {
+            if (Math.random() < 0.25) {
+              e.stunTimer = 0.8;
+              spawnText(this.ctx, e.x, e.y - e.bodyRadius - 0.2, 'STUN', '#ffda79', 11);
+              if (this.ctx && this.ctx.hud) {
+                this.ctx.hud.logConsole(`Heavy Impact: target stunned for 0.8s`, 'success');
+              }
+            }
+          }
+
           if (this.kind === 'interrupt') {
             e.interrupt();
             if (wasCasting) {
               this.ctx.tracker.recordInterruptSuccess();
-              AudioManager.play('interrupt_success');
+              AudioManager.play('interrupt_success', this.x);
             }
           }
           this._destroy();
@@ -69,14 +90,40 @@ export class Projectile {
     this.dead = true;
     const i = this.ctx.projectiles.indexOf(this);
     if (i >= 0) this.ctx.projectiles.splice(i, 1);
+
+    // Spawn burst of sparks on hit/expiration
+    const sparkColor = this.fromPlayer
+      ? (this.kind === 'basic' ? '#00d2ff' : '#ffe24b')
+      : (this.kind === 'boss_enraged' ? '#d23eff' : '#ff6a4d');
+    spawnBurst(this.ctx, this.x, this.y, sparkColor, 8, 4, 0.25, 3.5);
   }
 
   draw(g, scale) {
-    const sz = this.fromPlayer ? 6 : 8;
+    const size = this.fromPlayer ? 0.08 : (this.kind === 'boss_enraged' ? 0.15 : 0.12); // size in meters
+    const angle = Math.atan2(this.dir.y, this.dir.x);
     const color = this.fromPlayer
-      ? (this.kind === 'basic' ? '#9ce8ff' : '#ffe24b')
-      : '#ff6a4d';
+      ? (this.kind === 'basic' ? '#00d2ff' : '#ffe24b')
+      : (this.kind === 'boss_enraged' ? '#d23eff' : '#ff6a4d');
+
+    g.save();
+    g.translate(this.x * scale, this.y * scale);
+    g.rotate(angle);
+
+    // Draw glowing energy capsule
+    g.shadowColor = color;
+    g.shadowBlur = 8;
     g.fillStyle = color;
-    g.fillRect(this.x * scale - sz/2, this.y * scale - sz/2, sz, sz);
+
+    const length = size * 3.5 * scale;
+    const width = size * scale;
+
+    g.beginPath();
+    g.arc(0, 0, width / 2, -Math.PI / 2, Math.PI / 2);
+    g.lineTo(-length, width / 2);
+    g.arc(-length, 0, width / 2, Math.PI / 2, -Math.PI / 2);
+    g.closePath();
+    g.fill();
+
+    g.restore();
   }
 }

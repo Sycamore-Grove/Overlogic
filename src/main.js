@@ -25,6 +25,11 @@ async function main() {
   const canvas = document.getElementById('arena');
   let arena = null;
 
+  GameState.onUpgradeNodeTriggered = () => {
+    GameManager.isUpgradeReward = true;
+    GameManager.goRewardSelection();
+  };
+
   // Hook GameManager transitions to drive screen-specific setup.
   const origGoCombat = GameManager.goCombat.bind(GameManager);
   const origGoReward = GameManager.goRewardSelection.bind(GameManager);
@@ -32,16 +37,39 @@ async function main() {
   const origGoLogic  = GameManager.goLogicEdit.bind(GameManager);
   const origGoMain   = GameManager.goMainMenu.bind(GameManager);
   const origGoVict   = GameManager.goVictory.bind(GameManager);
+  const origGoSandbox = GameManager.goSandbox.bind(GameManager);
 
   GameManager.goCombat = () => {
     origGoCombat();
-    const battle = GameDatabase.getBattle(GameState.currentBattleIndex);
-    if (!battle) { console.error('No battle at index', GameState.currentBattleIndex); return; }
+    const battle = GameState.getActiveBattle();
+    if (!battle) { console.error('No active battle found'); return; }
     if (arena) arena.stop();
     arena = new CombatArena(canvas, battleHUD);
     battleHUD.arena = arena;
     arena.onFinished = (won) => GameManager.onBattleFinished(won);
     arena.start(battle);
+  };
+  GameManager.goSandbox = () => {
+    origGoSandbox();
+    const sandboxBattle = {
+      id: 'sandbox',
+      displayName: 'Sandbox Test Simulation',
+      enemySpawns: [
+        { enemyId: 'crawler', count: 2, wave: 1 },
+        { enemyId: 'shooter', count: 1, wave: 1 },
+        { enemyId: 'charger', count: 1, wave: 2 }
+      ],
+      arenaType: 'standard_20x20',
+      rewardPool: []
+    };
+    if (arena) arena.stop();
+    arena = new CombatArena(canvas, battleHUD);
+    battleHUD.arena = arena;
+    arena.onFinished = (won) => {
+      // Return straight to editor in sandbox mode
+      GameManager.goLogicEdit();
+    };
+    arena.start(sandboxBattle);
   };
   GameManager.goRewardSelection = () => { origGoReward(); rewardUI.show(); };
   GameManager.goPostBattleReport = () => { origGoReport(); reportUI.show(); };
@@ -53,6 +81,7 @@ async function main() {
   GameManager.goVictory = () => {
     origGoVict();
     if (arena) { arena.stop(); arena = null; }
+    victoryUI.show();
   };
 
   // Start at main menu

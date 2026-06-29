@@ -2,7 +2,7 @@
 import { EnemyBase } from './EnemyBase.js';
 import { Projectile } from '../vfx/Projectile.js';
 import { AudioManager } from '../systems/AudioManager.js';
-import { spawnBurst } from '../vfx/ParticleSystem.js';
+import { spawnBurst, spawnShockwave } from '../vfx/ParticleSystem.js';
 import { GameDatabase } from '../core/GameDatabase.js';
 import { CrawlerEnemy } from './CrawlerEnemy.js';
 
@@ -16,9 +16,11 @@ export class BossProtocolWarden extends EnemyBase {
     this.summonTimer = 8;
     this.laserTimer = 5;
     this.laserCastingTimer = 0;
+    this.laserFiringTimer = 0;
     this.laserActive = false;
     this.laserAngle = 0;
     this.onPhaseChanged = null;
+    this.onLaserFire = null;
   }
 
   init(data, ctx) {
@@ -39,15 +41,14 @@ export class BossProtocolWarden extends EnemyBase {
 
   takeDamage(amount, kind) {
     if (this.dead) return;
-    this.hp -= amount;
+    const oldHp = this.hp;
+    super.takeDamage(amount, kind);
     const pct = this.hp / this.maxHp;
     if (this.currentPhase === 1 && pct <= this.phase2HpPct) this._enterPhase(2);
     else if (this.currentPhase === 2 && pct <= this.phase3HpPct) this._enterPhase(3);
-    if (this.hp <= 0) {
-      this.hp = 0; this.dead = true;
-      this.ctx.tracker.recordEnemyDeath(this.enemyId);
+    else if (this.currentPhase === 3 && pct <= 0.15) this._enterPhase(4);
+    if (this.hp <= 0 && oldHp > 0) {
       spawnBurst(this.ctx, this.x, this.y, 'rgba(255,60,120,0.9)', 24, 7, 0.6, 6);
-      AudioManager.play('enemy_death');
     }
   }
 
@@ -55,6 +56,18 @@ export class BossProtocolWarden extends EnemyBase {
     this.currentPhase = p;
     if (this.onPhaseChanged) this.onPhaseChanged(p);
     AudioManager.play('boss_phase');
+    
+    // Spawn advanced screen-wide phase shockwaves and burst sparks
+    spawnShockwave(this.ctx, this.x, this.y, 'rgba(255,45,116,0.6)', 5.0, 0.7);
+    spawnBurst(this.ctx, this.x, this.y, '#ff2d74', 32, 6, 0.55, 5);
+
+    if (p === 4) {
+      this.laserActive = false;
+      this.laserCastingTimer = 0;
+      this.laserFiringTimer = 0;
+      this.orbitAngle = Math.atan2(this.y, this.x);
+      this.actionTimer = 0.2;
+    }
   }
 
   tickBehavior(dt) {
@@ -66,6 +79,38 @@ export class BossProtocolWarden extends EnemyBase {
       case 1: this._phase1(dt, r, dirX, dirY, dist); break;
       case 2: this._phase2(dt, r, dirX, dirY, dist); break;
       case 3: this._phase3(dt, r, dirX, dirY); break;
+      case 4: this._phase4(dt, r); break;
+    }
+  }
+
+  _phase4(dt, r) {
+    // 1. Orbit rapidly around (0,0)
+    this.orbitAngle = (this.orbitAngle || 0) + dt * 2.0;
+    const orbitRadius = 6.5;
+    this.x = Math.cos(this.orbitAngle) * orbitRadius;
+    this.y = Math.sin(this.orbitAngle) * orbitRadius;
+
+    // 2. Bullet hell spray
+    this.actionTimer -= dt;
+    if (this.actionTimer <= 0) {
+      const baseAng = (performance.now() / 600) % (Math.PI * 2);
+      for (let i = 0; i < 6; i++) {
+        const ang = baseAng + (i / 6) * Math.PI * 2;
+        const p = new Projectile();
+        p.setup(
+          { x: this.x, y: this.y },
+          { x: Math.cos(ang), y: Math.sin(ang) },
+          8.0, // speed
+          3.0, // life
+          8,   // dmg
+          'boss_enraged',
+          false
+        );
+        p.setCtx(this.ctx);
+        this.ctx.projectiles.push(p);
+      }
+      this.actionTimer = 0.3;
+      AudioManager.play('basic_attack');
     }
   }
 
@@ -99,6 +144,14 @@ export class BossProtocolWarden extends EnemyBase {
   }
 
   _phase3(dt, r, dirX, dirY) {
+    if (this.laserFiringTimer > 0) {
+      this.laserFiringTimer -= dt;
+      if (this.laserFiringTimer <= 0) {
+        this.laserActive = false;
+        this.laserTimer = 5;
+      }
+      return;
+    }
     if (!this.laserActive) {
       this.laserTimer -= dt;
       if (this.laserTimer <= 0) {
@@ -110,19 +163,21 @@ export class BossProtocolWarden extends EnemyBase {
       this.laserCastingTimer -= dt;
       if (this.laserCastingTimer <= 0) {
         this._checkLaserHit({ x: r.x, y: r.y });
-        this.laserActive = false;
-        this.laserTimer = 5;
+        this.laserFiringTimer = 0.4; // Keep laser firing visible for 0.4s
+        if (this.onLaserFire) this.onLaserFire();
       }
     }
   }
 
   _checkLaserHit(robotPos) {
-    // rotate robotPos into boss local frame
+    const r = this.ctx.robot;
+    if (!r || r.dead) return;
     const dx = robotPos.x - this.x, dy = robotPos.y - this.y;
     const localX = dx * Math.cos(-this.laserAngle) - dy * Math.sin(-this.laserAngle);
     const localY = dx * Math.sin(-this.laserAngle) + dy * Math.cos(-this.laserAngle);
-    if (localX >= 0 && localX <= 8 && Math.abs(localY) <= 1.5) {
-      this.ctx.robot.takeDamage(30, this.enemyId);
+    const rad = r.bodyRadius || 0.4;
+    if (localX >= -rad && localX <= 8 + rad && Math.abs(localY) <= 1.5 + rad) {
+      r.takeDamage(30, this.enemyId);
     }
   }
 
@@ -158,16 +213,80 @@ export class BossProtocolWarden extends EnemyBase {
 
   draw(g, scale) {
     super.draw(g, scale);
-    // laser telegraph
+    
+    // laser telegraph (glowing red outline boundary lane)
     if (this.laserActive && this.laserCastingTimer > 0) {
       const t = 1 - this.laserCastingTimer / 1.5;
       g.save();
       g.translate(this.x * scale, this.y * scale);
       g.rotate(this.laserAngle);
-      g.fillStyle = `rgba(255,40,40,${0.25 + t * 0.35})`;
+      g.fillStyle = `rgba(255,40,40,${0.15 + t * 0.2})`;
       g.fillRect(0, -1.5 * scale, 8 * scale, 3 * scale);
-      g.strokeStyle = `rgba(255,80,80,${0.5 + t * 0.5})`;
+      g.strokeStyle = `rgba(255,80,80,${0.4 + t * 0.4})`;
+      g.lineWidth = 1.5;
       g.strokeRect(0, -1.5 * scale, 8 * scale, 3 * scale);
+      g.restore();
+    }
+    
+    // laser Firing graphics
+    if (this.laserFiringTimer > 0) {
+      g.save();
+      g.translate(this.x * scale, this.y * scale);
+      g.rotate(this.laserAngle);
+      
+      const beamW = 8 * scale;
+      const beamH = 3 * scale;
+      
+      // Outer red glow envelope
+      g.shadowColor = '#ff2d74';
+      g.shadowBlur = 20;
+      g.fillStyle = 'rgba(255, 45, 116, 0.7)';
+      g.fillRect(0, -beamH / 2, beamW, beamH);
+      
+      // Inner hot plasma white core
+      g.fillStyle = '#ffffff';
+      g.shadowColor = '#ffffff';
+      g.shadowBlur = 10;
+      g.fillRect(0, -beamH * 0.35 / 2, beamW, beamH * 0.35);
+      
+      // Draw electric arcs along the beam
+      g.strokeStyle = '#ffb8e2';
+      g.lineWidth = 2;
+      g.beginPath();
+      let cx = 0;
+      g.moveTo(0, 0);
+      while (cx < beamW) {
+        cx += 15 + Math.random() * 20;
+        const cy = (Math.random() - 0.5) * beamH * 0.35;
+        g.lineTo(cx, cy);
+      }
+      g.stroke();
+      
+      g.restore();
+    }
+
+    // Phase 4 rotating geometric star warning shields
+    if (this.currentPhase === 4 && !this.dead) {
+      g.save();
+      g.translate(this.x * scale, this.y * scale);
+      const rot = (performance.now() / 250) % (Math.PI * 2);
+      g.rotate(rot);
+      g.strokeStyle = 'rgba(255, 45, 116, 0.65)';
+      g.lineWidth = 2;
+      g.shadowColor = '#ff2d74';
+      g.shadowBlur = 12;
+      
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const rRad = this.bodyRadius * scale * 1.45;
+        const px = Math.cos(a) * rRad;
+        const py = Math.sin(a) * rRad;
+        if (i === 0) g.moveTo(px, py);
+        else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.stroke();
       g.restore();
     }
   }

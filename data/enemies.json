@@ -2,7 +2,7 @@
   "enemies": [
     { "id": "crawler", "displayName": "Crawler", "maxHp": 20, "moveSpeed": 2.5, "damage": 8, "attackRange": 1.0, "attackCooldown": 1.2, "behaviorType": "melee_chase", "bodyRadius": 0.35, "color": [1.0, 0.35, 0.25] },
     { "id": "shooter", "displayName": "Shooter", "maxHp": 18, "moveSpeed": 2.0, "damage": 6, "attackRange": 6.0, "attackCooldown": 1.5, "behaviorType": "ranged_keep_distance", "bodyRadius": 0.35, "color": [1.0, 0.55, 0.2], "projectileSpeed": 8.0, "projectileLife": 3.0, "kiteDistance": 3.0 },
-    { "id": "charger", "displayName": "Charger", "maxHp": 35, "moveSpeed": 1.8, "damage": 18, "attackRange": 5.0, "attackCooldown": 2.5, "behaviorType": "charge_caster", "bodyRadius": 0.4, "color": [1.0, 0.2, 0.2], "chargeSpeed": 7.0, "chargeTelegraph": 1.2, "chargeDistance": 6.0 },
-    { "id": "boss_warden", "displayName": "Protocol Warden", "maxHp": 250, "moveSpeed": 1.5, "damage": 10, "attackRange": 12.0, "attackCooldown": 1.8, "behaviorType": "boss_warden", "bodyRadius": 0.8, "color": [0.9, 0.1, 0.4], "phase2HpPct": 0.65, "phase3HpPct": 0.30 }
+    { "id": "charger", "displayName": "Charger", "maxHp": 35, "moveSpeed": 1.8, "damage": 18, "attackRange": 5.0, "attackCooldown": 2.5, "behaviorType": "charge_caster", "bodyRadius": 0.4, "color": [1.0, 0.2, 0.2], "chargeSpeed": 7.0, "chargeTelegraph": 1.2, "chargeDistance": 6.0, "armor": 3 },
+    { "id": "boss_warden", "displayName": "Protocol Warden", "maxHp": 250, "moveSpeed": 1.5, "damage": 10, "attackRange": 12.0, "attackCooldown": 1.8, "behaviorType": "boss_warden", "bodyRadius": 0.8, "color": [0.9, 0.1, 0.4], "phase2HpPct": 0.65, "phase3HpPct": 0.30, "armor": 6 }
   ]
 }

@@ -18,6 +18,7 @@
     <div class="menu-buttons">
       <button id="btn-start" class="btn primary">Start Simulation</button>
       <button id="btn-how" class="btn">How to Play</button>
+      <button id="btn-reset" class="btn ghost">Reset Progress</button>
       <button id="btn-exit" class="btn ghost">Exit</button>
     </div>
     <div id="how-overlay" class="overlay hidden">
@@ -37,31 +38,78 @@
 
   <!-- ===== Logic Editor ===== -->
   <section id="screen-editor" class="screen hidden">
-    <header class="editor-header">
-      <div class="battle-info">
-        <span class="label">Next Battle</span>
-        <span id="ed-battle-name" class="value">—</span>
-        <span id="ed-battle-preview" class="muted">—</span>
+    <header class="editor-header" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div class="battle-info">
+          <span class="label">Next Battle</span>
+          <span id="ed-battle-name" class="value">—</span>
+          <span id="ed-battle-preview" class="muted">—</span>
+        </div>
+        <div class="teach-info">
+          <span class="label">Directive Layer</span>
+          <span id="ed-teach" class="value">1</span>
+        </div>
       </div>
-      <div class="teach-info">
-        <span class="label">Directive Layer</span>
-        <span id="ed-teach" class="value">1</span>
+      <div class="map-panel" style="border-top: 1px solid var(--line); padding-top: 8px; width: 100%;">
+        <span class="label" style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">// CHOOSE PROTOCOL ROUTE</span>
+        <div id="map-nodes" class="map-nodes" style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 12px;"></div>
       </div>
     </header>
 
     <div class="editor-grid">
       <aside class="panel" id="panel-conditions">
         <h3>Available Conditions</h3>
+        <input type="text" id="cond-search" class="search-input" placeholder="Search conditions...">
         <ul id="cond-list" class="module-list"></ul>
       </aside>
 
       <main class="panel panel-rules" id="panel-rules">
-        <h3>Active Rules <button id="btn-add-rule" class="btn small">+ Add Rule</button></h3>
+        <h3>Active Rules 
+          <button id="btn-add-rule" class="btn small">+ Add Rule</button>
+          <button id="btn-undo" class="btn small ghost" style="margin-left:8px; padding:2px 8px;" title="Undo (Ctrl+Z)">Undo</button>
+          <button id="btn-redo" class="btn small ghost" style="margin-left:4px; padding:2px 8px;" title="Redo (Ctrl+Y)">Redo</button>
+        </h3>
+        
+        <!-- Slots Bar -->
+        <div class="slots-bar" style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; padding: 6px 12px; background: rgba(75, 225, 255, 0.03); border: 1px solid var(--line); border-radius: 4px;">
+          <span style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-right: auto;">Loadout Slots:</span>
+          <div class="slot-item" style="display: flex; align-items: center; gap: 6px;">
+            <span id="slot-led-1" class="slot-led" style="width: 7px; height: 7px; border-radius: 50%; background: #222; box-shadow: 0 0 4px rgba(0,0,0,0.5); display: inline-block; transition: background 0.3s, box-shadow 0.3s;"></span>
+            <span style="font-size: 11px; color: var(--txt); margin-right: 4px;">Slot 1</span>
+            <button id="btn-load-1" class="btn small" style="padding: 2px 6px; font-size: 9px; min-width: 42px; border-color: rgba(75,225,255,0.25);">LOAD</button>
+            <button id="btn-save-1" class="btn small primary" style="padding: 2px 6px; font-size: 9px; min-width: 42px;">SAVE</button>
+          </div>
+          <div class="slot-item" style="display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--line); padding-left: 10px;">
+            <span id="slot-led-2" class="slot-led" style="width: 7px; height: 7px; border-radius: 50%; background: #222; box-shadow: 0 0 4px rgba(0,0,0,0.5); display: inline-block; transition: background 0.3s, box-shadow 0.3s;"></span>
+            <span style="font-size: 11px; color: var(--txt); margin-right: 4px;">Slot 2</span>
+            <button id="btn-load-2" class="btn small" style="padding: 2px 6px; font-size: 9px; min-width: 42px; border-color: rgba(75,225,255,0.25);">LOAD</button>
+            <button id="btn-save-2" class="btn small primary" style="padding: 2px 6px; font-size: 9px; min-width: 42px;">SAVE</button>
+          </div>
+          <div class="slot-item" style="display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--line); padding-left: 10px;">
+            <span id="slot-led-3" class="slot-led" style="width: 7px; height: 7px; border-radius: 50%; background: #222; box-shadow: 0 0 4px rgba(0,0,0,0.5); display: inline-block; transition: background 0.3s, box-shadow 0.3s;"></span>
+            <span style="font-size: 11px; color: var(--txt); margin-right: 4px;">Slot 3</span>
+            <button id="btn-load-3" class="btn small" style="padding: 2px 6px; font-size: 9px; min-width: 42px; border-color: rgba(75,225,255,0.25);">LOAD</button>
+            <button id="btn-save-3" class="btn small primary" style="padding: 2px 6px; font-size: 9px; min-width: 42px;">SAVE</button>
+          </div>
+        </div>
+
         <div id="rule-form" class="rule-form hidden">
           <select id="f-cond"></select>
           <span id="f-cond-param"></span>
+          <select id="f-op" style="width: 80px;">
+            <option value="">None</option>
+            <option value="and">AND</option>
+          </select>
+          <select id="f-cond2" class="hidden"></select>
+          <span id="f-cond2-param" class="hidden"></span>
           <span class="muted">THEN</span>
           <select id="f-act"></select>
+          <select id="f-target" class="hidden" style="width: 100px;">
+            <option value="nearest">Nearest</option>
+            <option value="lowest_hp">Lowest HP</option>
+            <option value="caster">Caster</option>
+            <option value="boss">Boss</option>
+          </select>
           <input id="f-prio" type="number" min="0" max="100" value="50" title="priority">
           <button id="f-add" class="btn small primary">Add</button>
           <button id="f-cancel" class="btn small ghost">Cancel</button>
@@ -71,13 +119,17 @@
 
       <aside class="panel" id="panel-actions">
         <h3>Available Actions</h3>
+        <input type="text" id="act-search" class="search-input" placeholder="Search actions...">
         <ul id="act-list" class="module-list"></ul>
       </aside>
     </div>
 
     <footer class="editor-footer">
       <div id="unit-stats" class="unit-stats"></div>
-      <button id="btn-run" class="btn primary big">Run Simulation ▶</button>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button id="btn-sandbox" class="btn secondary big" style="border-color: #ffb938; color: #ffb938; text-shadow: 0 0 8px rgba(255, 185, 56, 0.45);">Sandbox Test ⚙️</button>
+        <button id="btn-run" class="btn primary big">Run Simulation ▶</button>
+      </div>
     </footer>
   </section>
 
@@ -87,7 +139,7 @@
       <div class="hud-left">
         <div class="bar"><span>HP</span><div class="bar-track"><div id="hp-fill" class="bar-fill hp"></div><span id="hp-text" class="bar-text"></span></div></div>
         <div class="bar"><span>EN</span><div class="bar-track"><div id="en-fill" class="bar-fill en"></div><span id="en-text" class="bar-text"></span></div></div>
-        <div class="bar"><span>OL</span><div class="bar-track"><div id="ol-fill" class="bar-fill ol"></div><span id="ol-text" class="bar-text"></span></div></div>
+        <div class="bar"><span>TEMP</span><div class="bar-track"><div id="ol-fill" class="bar-fill ol"></div><span id="ol-text" class="bar-text"></span></div></div>
       </div>
       <div class="hud-center">
         <div id="current-logic" class="current-logic">Current Logic: —</div>
@@ -96,6 +148,7 @@
       </div>
       <div class="hud-right">
         <button id="btn-pause" class="btn small">Pause</button>
+        <button id="btn-step" class="btn small hidden">Step</button>
         <button id="btn-speed" class="btn small">Speed x1</button>
         <button id="btn-quit" class="btn small ghost">Quit</button>
       </div>
@@ -104,7 +157,19 @@
       <span id="boss-name">Protocol Warden</span>
       <div class="bar-track boss"><div id="boss-fill" class="bar-fill boss"></div></div>
     </div>
-    <canvas id="arena" width="720" height="720"></canvas>
+    <div class="combat-main-layout">
+      <canvas id="arena" width="720" height="720"></canvas>
+      <aside class="panel combat-rules-panel">
+        <div class="directives-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+          <h3>Active Directives</h3>
+          <ul id="combat-rules-list" class="combat-rules-list" style="flex: 1; overflow-y: auto;"></ul>
+        </div>
+        <div class="console-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px;">
+          <h3>Console Log</h3>
+          <div id="combat-console-log" class="combat-console-log"></div>
+        </div>
+      </aside>
+    </div>
     <div id="phase-toast" class="phase-toast hidden"></div>
   </section>
 
@@ -123,6 +188,10 @@
       <div class="report-card"><h3>Damage Report</h3><ul id="rep-damage"></ul></div>
       <div class="report-card"><h3>Logic Report</h3><ul id="rep-logic"></ul></div>
       <div class="report-card"><h3>Suggested Fix</h3><ul id="rep-suggest"></ul></div>
+      <div class="report-card" style="grid-column: span 3; display: flex; flex-direction: column; align-items: center;">
+        <h3>Performance Analysis</h3>
+        <canvas id="chart-report" width="680" height="200" style="width: 100%; height: 200px; border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 4px; margin-top: 10px;"></canvas>
+      </div>
     </div>
     <div class="report-actions">
       <button id="btn-retry" class="btn primary">Retry Battle</button>
@@ -136,10 +205,15 @@
     <h1 class="logo">SIMULATION COMPLETE</h1>
     <p class="subtitle">// your logic survived</p>
     <p class="muted">The machine learned from you.</p>
+    <div class="report-card" style="max-width: 680px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+      <h3>Final Run Statistics</h3>
+      <canvas id="chart-victory" width="680" height="200" style="width: 100%; height: 200px; border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 4px; margin-top: 10px;"></canvas>
+    </div>
     <button id="btn-victory-menu" class="btn primary big">Return to Menu</button>
   </section>
 
 </div>
+<div id="custom-tooltip" class="custom-tooltip hidden"></div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

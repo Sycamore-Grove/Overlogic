@@ -42,20 +42,71 @@ export class ActionExecutor {
   _startCd(actionId) { this.cooldowns.set(actionId, this.stats.actionCooldown(actionId, this.robot)); }
 
   // Returns true if action actually executed.
-  execute(actionId) {
+  execute(actionId, rule = null) {
     if (this.isOnCooldown(actionId)) return false;
     const cost = this.energyCost(actionId);
     if (this.robot.energy < cost) return false;
+
+    // Thermal Recycle: actions executed during Meltdown cool CPU temp by -10°C
+    if (this.ctx && this.ctx.overlogic && this.ctx.overlogic.active && this.stats.stat('thermal_recycle', 0) > 0) {
+      this.ctx.overlogic.value = Math.max(0, this.ctx.overlogic.value - 10);
+      this.ctx.overlogic._checkState(); // make sure active state updates immediately
+      if (this.ctx.hud) {
+        this.ctx.hud.logConsole(`Thermal Recycle: Action dumped heat! Cooled by -10°C`, 'success');
+      }
+    }
+
     switch (actionId) {
-      case 'basic_attack':   return this._basicAttack();
-      case 'dash_toward':    return this._dash(true);
-      case 'dash_away':      return this._dash(false);
+      case 'basic_attack':   return this._basicAttack(rule);
+      case 'dash_toward':    return this._dash(true, rule);
+      case 'dash_away':      return this._dash(false, rule);
       case 'shield':         return this._shield();
       case 'interrupt_shot': return this._interruptShot();
       case 'overdrive':      return this._overdrive();
       case 'repair':         return this._repair();
       case 'drop_mine':      this._dropMine(); return true;
       default: return false;
+    }
+  }
+
+  _resolveTarget(priority) {
+    const enemies = this.ctx.enemies.filter(e => !e.dead);
+    if (enemies.length === 0) return null;
+
+    switch (priority) {
+      case 'lowest_hp': {
+        let best = null, minHp = Infinity;
+        for (const e of enemies) {
+          if (e.hp < minHp) {
+            minHp = e.hp;
+            best = e;
+          }
+        }
+        return best;
+      }
+      case 'caster': {
+        const casters = this.ctx.castingEnemies();
+        if (casters.length > 0) {
+          let best = null, minDist = Infinity;
+          for (const c of casters) {
+            const d = Math.hypot(c.x - this.robot.x, c.y - this.robot.y);
+            if (d < minDist) {
+              minDist = d;
+              best = c;
+            }
+          }
+          if (best) return best;
+        }
+        return this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
+      }
+      case 'boss': {
+        const boss = this.ctx.boss;
+        if (boss && !boss.dead) return boss;
+        return this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
+      }
+      case 'nearest':
+      default:
+        return this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
     }
   }
 
@@ -70,8 +121,9 @@ export class ActionExecutor {
     };
   }
 
-  _basicAttack() {
-    const e = this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
+  _basicAttack(rule) {
+    const priority = rule?.targetPriority || 'nearest';
+    const e = this._resolveTarget(priority);
     if (!e) return false;
     const dist = Math.hypot(e.x - this.robot.x, e.y - this.robot.y);
     const range = this.stats.actionRange('basic_attack');
@@ -89,8 +141,9 @@ export class ActionExecutor {
     return true;
   }
 
-  _dash(toward) {
-    const e = this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
+  _dash(toward, rule) {
+    const priority = rule?.targetPriority || 'nearest';
+    const e = this._resolveTarget(priority);
     if (!e) return false;
     let dx = e.x - this.robot.x, dy = e.y - this.robot.y;
     const len = Math.hypot(dx, dy);

@@ -4,6 +4,7 @@ import { GameState } from '../core/GameState.js';
 import { GameManager } from '../core/GameManager.js';
 import { buildReport } from '../systems/PostBattleReportBuilder.js';
 import { AudioManager } from '../systems/AudioManager.js';
+import { drawStatsChart } from './StatsChart.js';
 
 export class PostBattleReportUI {
   constructor() {
@@ -11,6 +12,7 @@ export class PostBattleReportUI {
     this.repDamage = document.getElementById('rep-damage');
     this.repLogic  = document.getElementById('rep-logic');
     this.repSuggest = document.getElementById('rep-suggest');
+    this.canvas = document.getElementById('chart-report');
     this.btnRetry  = document.getElementById('btn-retry');
     this.btnEdit   = document.getElementById('btn-edit');
     this.btnRestart = document.getElementById('btn-restart');
@@ -39,5 +41,8 @@ export class PostBattleReportUI {
     this.repDamage.innerHTML = built.damage_lines.map(s => `<li>${s}</li>`).join('');
     this.repLogic.innerHTML  = built.logic_lines.map(s => `<li>${s}</li>`).join('');
     this.repSuggest.innerHTML = built.suggestions.map(s => `<li>${s}</li>`).join('');
+    
+    // Draw performance charts
+    drawStatsChart(this.canvas, report);
   }
 }

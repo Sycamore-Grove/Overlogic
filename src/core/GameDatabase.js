@@ -1,7 +1,7 @@
 // GameDatabase.js — loads all JSON data tables once, exposes typed access.
 // Mirrors scripts/core/GameDatabase.gd. ES6 module, singleton instance exported.
 
-class GameDatabase {
+class GameDatabaseClass {
   constructor() {
     this.conditions = new Map();   // id -> condition data
     this.actions = new Map();      // id -> action data
@@ -55,4 +55,4 @@ class GameDatabase {
   }
 }
 
-export const GameDatabase = new GameDatabase();
+export const GameDatabase = new GameDatabaseClass();

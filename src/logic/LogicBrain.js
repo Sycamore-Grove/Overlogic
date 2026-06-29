@@ -54,29 +54,81 @@ export class LogicBrain {
   _tick() {
     const rules = GameState.rules;
     const valid = [];
-    for (const r of rules) {
-      if (r.enabled === false) continue;
-      const actId = r.actionId;
-      if (this.executor.isOnCooldown(actId)) continue;
-      if (this.robot.energy < this.executor.energyCost(actId)) continue;
-      // interrupt_shot requires a casting target to be considered usable
-      if (actId === 'interrupt_shot' && this.ctx.castingEnemies().length === 0) continue;
-      if (this.evaluator.evaluate(this.robot, this.ctx, r)) valid.push(r);
+    const diagnostics = {};
+
+    // Default movement: pursue nearest enemy at 60% speed.
+    // If a rule changes movement (like dash or pursue out-of-range basic attack), it will override this.
+    // This prevents the robot from drifting in a stale direction when casting non-movement skills like Shield or Repair.
+    const nearestEnemy = this.ctx.nearestEnemyTo({ x: this.robot.x, y: this.robot.y });
+    if (nearestEnemy) {
+      const dx = nearestEnemy.x - this.robot.x;
+      const dy = nearestEnemy.y - this.robot.y;
+      const len = Math.hypot(dx, dy) || 1;
+      this.robot.moveIntent = {
+        x: (dx / len) * this.robot.moveSpeed * 0.6,
+        y: (dy / len) * this.robot.moveSpeed * 0.6
+      };
+    } else {
+      this.robot.moveIntent = { x: 0, y: 0 };
     }
+
+    for (const r of rules) {
+      if (r.enabled === false) {
+        diagnostics[r.id] = 'disabled';
+        continue;
+      }
+      const actId = r.actionId;
+      if (this.executor.isOnCooldown(actId)) {
+        diagnostics[r.id] = 'cooldown';
+        continue;
+      }
+      if (this.robot.energy < this.executor.energyCost(actId)) {
+        diagnostics[r.id] = 'energy';
+        continue;
+      }
+      if (actId === 'interrupt_shot' && this.ctx.castingEnemies().length === 0) {
+        diagnostics[r.id] = 'condition_false';
+        continue;
+      }
+      if (this.evaluator.evaluate(this.robot, this.ctx, r)) {
+        valid.push(r);
+        diagnostics[r.id] = 'overridden';
+      } else {
+        diagnostics[r.id] = 'condition_false';
+      }
+    }
+
     if (valid.length === 0) {
+      this.robot.aimTarget = null;
       this.executor.executeDefault();
-      this._emit(null, 'Idle: default behavior');
+      this._emit(null, 'Idle: default behavior', diagnostics);
       return;
     }
+
     const sorted = sortDesc(valid);
     const chosen = sorted[0];
-    const ok = this.executor.execute(chosen.actionId);
+    diagnostics[chosen.id] = 'executing';
+
+    // Store target for laser aiming visual pointer (Task 4)
+    const priority = chosen.targetPriority || 'nearest';
+    if (['basic_attack', 'interrupt_shot'].includes(chosen.actionId)) {
+      this.robot.aimTarget = this.executor._resolveTarget(priority);
+    } else {
+      this.robot.aimTarget = null;
+    }
+
+    const ok = this.executor.execute(chosen.actionId, chosen);
     if (ok) {
       this._trackAndOverlogic(chosen);
-      this._emit(chosen, formatLabel(chosen, GameDatabase));
+      this._emit(chosen, formatLabel(chosen, GameDatabase), diagnostics);
     } else {
-      this.executor.executeDefault();
-      this._emit(null, 'Idle: default behavior');
+      if (chosen.actionId === 'basic_attack') {
+        this._emit(chosen, formatLabel(chosen, GameDatabase) + ' (Pursuing)', diagnostics);
+      } else {
+        this.robot.aimTarget = null;
+        this.executor.executeDefault();
+        this._emit(null, 'Idle: default behavior', diagnostics);
+      }
     }
   }
 
@@ -90,9 +142,9 @@ export class LogicBrain {
     }
   }
 
-  _emit(rule, label) {
+  _emit(rule, label, diagnostics = null) {
     this.currentRule = rule;
     this.currentLabel = label;
-    if (this.onLabel) this.onLabel(label, rule);
+    if (this.onLabel) this.onLabel(label, rule, diagnostics);
   }
 }

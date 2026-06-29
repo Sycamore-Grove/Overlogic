@@ -3,8 +3,15 @@
 
 export class ConditionEvaluator {
   evaluate(robot, ctx, rule) {
-    const condId = rule.conditionId;
-    const val = rule.conditionValue;
+    const cond1 = this.evaluateSingle(robot, ctx, rule.conditionId, rule.conditionValue);
+    if (rule.operator === 'and' && rule.conditionId2) {
+      const cond2 = this.evaluateSingle(robot, ctx, rule.conditionId2, rule.conditionValue2);
+      return cond1 && cond2;
+    }
+    return cond1;
+  }
+
+  evaluateSingle(robot, ctx, condId, val) {
     switch (condId) {
       case 'enemy_nearby': {
         const r = +val;
@@ -40,6 +47,8 @@ export class ConditionEvaluator {
         if (!ctx.boss || ctx.boss.dead) return false;
         return ctx.boss.currentPhase === (val | 0);
       }
+      case 'on_hazard':
+        return ctx.isRobotOnHazard();
       default:
         return false;
     }

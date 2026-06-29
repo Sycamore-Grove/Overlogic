@@ -10,10 +10,11 @@ const State = {
   RewardSelection: 'reward', PostBattleReport: 'report', Victory: 'victory',
 };
 
-class GameManager {
+class GameManagerClass {
   constructor() {
     this.state = State.MainMenu;
     this.lastBattleWon = false;
+    this.isUpgradeReward = false;
   }
 
   _show(id) {
@@ -23,17 +24,19 @@ class GameManager {
 
   goMainMenu()    { this.state = State.MainMenu;        this._show('main'); }
   goLogicEdit()   { this.state = State.LogicEditing;    this._show('editor'); }
-  goCombat()      { this.state = State.Combat;          this._show('combat'); }
+  goCombat()      { this.state = State.Combat;          this._show('combat'); this.isUpgradeReward = false; }
   goRewardSelection() { this.state = State.RewardSelection; this._show('reward'); }
   goPostBattleReport() { this.state = State.PostBattleReport; this._show('report'); }
   goVictory()     { this.state = State.Victory;         this._show('victory'); }
+  goSandbox()     { this.state = State.Combat;          this._show('combat'); this.isUpgradeReward = false; }
 
   // Called by CombatArena when a battle ends.
   onBattleFinished(won) {
     this.lastBattleWon = won;
     if (won) {
       // Final boss cleared?
-      const isLast = GameState.currentBattleIndex >= GameDatabase.getBattleCount() - 1;
+      const activeBattle = GameState.getActiveBattle();
+      const isLast = activeBattle && activeBattle.battleIndex >= GameDatabase.getBattleCount() - 1;
       if (isLast) {
         GameState.onBattleWon('');
         this.goVictory();
@@ -47,7 +50,12 @@ class GameManager {
 
   // Called by RewardScreen after player picks a reward.
   onRewardChosen(rewardId) {
-    GameState.onBattleWon(rewardId);
+    if (this.isUpgradeReward) {
+      GameState.onUpgradeNodeChosen(rewardId);
+      this.isUpgradeReward = false;
+    } else {
+      GameState.onBattleWon(rewardId);
+    }
     if (GameState.isDemoCleared()) this.goVictory();
     else this.goLogicEdit();
   }
@@ -58,5 +66,5 @@ class GameManager {
   onReportRestartRun()  { GameState.resetRun(); this.goLogicEdit(); }
 }
 
-export const GameManager = new GameManager();
+export const GameManager = new GameManagerClass();
 export { State };

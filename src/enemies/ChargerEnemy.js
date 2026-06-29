@@ -80,16 +80,83 @@ export class ChargerEnemy extends EnemyBase {
   }
 
   draw(g, scale) {
-    super.draw(g, scale);
-    // telegraph ring when casting
+    if (this.dead) { super.draw(g, scale); return; }
+    const rPx = this.bodyRadius * scale;
+    
+    g.save();
+    g.translate(this.x * scale, this.y * scale);
+    
+    // Rotate based on movement / charge direction
+    let angle = 0;
+    if (this.chargeState === 'charging') {
+      angle = Math.atan2(this.chargeDir.y, this.chargeDir.x);
+    } else {
+      const r = this.ctx.robot;
+      if (r) angle = Math.atan2(r.y - this.y, r.x - this.x);
+    }
+    g.rotate(angle);
+    
+    g.shadowColor = '#ff2c2c';
+    g.shadowBlur = 10;
+    g.strokeStyle = '#ff2c2c';
+    g.lineWidth = 2.5;
+    g.fillStyle = '#2d0606';
+    
+    // Triangular armored shield ram
+    g.beginPath();
+    g.moveTo(rPx * 1.15, 0);
+    g.lineTo(-rPx * 0.8, -rPx * 0.95);
+    g.lineTo(-rPx * 0.8, rPx * 0.95);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    
+    // Back jet vents & engine fire
+    g.shadowBlur = 0;
+    if (this.chargeState === 'charging' || this.chargeState === 'casting') {
+      g.fillStyle = '#ff7a2c';
+      const flameLen = rPx * (0.8 + Math.random() * 0.7);
+      g.beginPath();
+      g.moveTo(-rPx * 0.8, -rPx * 0.35);
+      g.lineTo(-rPx * 0.8 - flameLen, 0);
+      g.lineTo(-rPx * 0.8, rPx * 0.35);
+      g.closePath();
+      g.fill();
+    } else {
+      g.fillStyle = '#16274a';
+      g.fillRect(-rPx * 0.9, -rPx * 0.3, rPx * 0.2, rPx * 0.6);
+    }
+    
+    g.restore();
+    
+    // Warning telegraph rings (casting)
     if (this.chargeState === 'casting') {
       const t = 1 - this.chargeTimer / this.chargeTelegraph;
-      g.strokeStyle = `rgba(255,40,40,${0.4 + t * 0.5})`;
+      
+      // Draw outer warning circle lane
+      g.strokeStyle = `rgba(255, 44, 44, ${0.35 + t * 0.55})`;
       g.lineWidth = 2;
       g.beginPath();
-      g.arc(this.x * scale, this.y * scale, (this.bodyRadius + 0.3 + t * 0.4) * scale, 0, Math.PI * 2);
+      g.arc(this.x * scale, this.y * scale, (this.bodyRadius + 0.3 + t * 0.5) * scale, 0, Math.PI * 2);
       g.stroke();
-      g.lineWidth = 1;
+      
+      // Draw charging lane indicator leading to target player
+      const r = this.ctx.robot;
+      if (r) {
+        g.save();
+        g.strokeStyle = `rgba(255, 44, 44, ${0.1 + t * 0.25})`;
+        g.lineWidth = rPx * 1.8;
+        g.beginPath();
+        g.moveTo(this.x * scale, this.y * scale);
+        // Extend line forward
+        const dx = r.x - this.x, dy = r.y - this.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        g.lineTo((this.x + (dx/dist) * this.chargeDistance) * scale, (this.y + (dy/dist) * this.chargeDistance) * scale);
+        g.stroke();
+        g.restore();
+      }
     }
+    
+    this.drawHpBar(g, scale);
   }
 }

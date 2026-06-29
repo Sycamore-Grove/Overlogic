@@ -16,6 +16,7 @@ import { ShooterEnemy } from '../enemies/ShooterEnemy.js';
 import { ChargerEnemy } from '../enemies/ChargerEnemy.js';
 import { BossProtocolWarden } from '../enemies/BossProtocolWarden.js';
 import { spawnBurst } from '../vfx/ParticleSystem.js';
+import { HazardTile } from '../vfx/HazardTile.js';
 
 const WAVE_INTERVAL = 2;     // seconds between waves
 const ENEMY_CLASSES = {
@@ -52,6 +53,14 @@ export class CombatArena {
   }
 
   start(battle) {
+    // High DPI / Retina Support
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = 720 * dpr;
+    this.canvas.height = 720 * dpr;
+    this.canvas.style.width = '720px';
+    this.canvas.style.height = '720px';
+    this.dpr = dpr;
+
     this.battle = battle;
     this._finished = false;
     this.battleTime = 0;
@@ -62,16 +71,42 @@ export class CombatArena {
 
     // Fresh context + robot + brain
     this.ctx = new BattleContext();
+    this.ctx.hud = this.hud;
     this.stats = new RobotStats();
     this.stats.loadFromGameState();
     this.robot = new RobotController();
     this.robot.initFromStats(this.stats, this.ctx);
     this.ctx.robot = this.robot;
+
+    // Spawn environmental hazards depending on battle
+    this.ctx.hazards = [];
+    if (battle.id === 'battle_4') {
+      this.ctx.hazards.push(new HazardTile(-4, -4, 2.0));
+      this.ctx.hazards.push(new HazardTile(4, 4, 2.0));
+      this.hud.logConsole(`System Warning: 2 Plasma Hazards detected in sector!`, 'warn');
+    } else if (battle.id === 'battle_5') {
+      this.ctx.hazards.push(new HazardTile(-5, 3, 2.2));
+      this.ctx.hazards.push(new HazardTile(5, -3, 2.2));
+      this.ctx.hazards.push(new HazardTile(0, 0, 1.8));
+      this.hud.logConsole(`System Warning: 3 Plasma Hazards detected in sector!`, 'warn');
+    } else if (battle.id === 'battle_6') {
+      this.ctx.hazards.push(new HazardTile(-6, -6, 2.5));
+      this.ctx.hazards.push(new HazardTile(6, 6, 2.5));
+      this.ctx.hazards.push(new HazardTile(-6, 6, 2.5));
+      this.ctx.hazards.push(new HazardTile(6, -6, 2.5));
+      this.hud.logConsole(`CRITICAL: 4 High-Output Plasma Hazards active in Warden Arena!`, 'danger');
+    }
+
     this.executor = new ActionExecutor();
     this.executor.setup(this.robot, this.ctx, this.stats, this.ctx.tracker);
     this.brain = new LogicBrain();
     this.brain.setup(this.robot, this.ctx, this.executor, this.ctx.tracker);
-    this.brain.onLabel = (label, rule) => this.hud.setCurrentLogic(label, rule, this.ctx.overlogic.active);
+    this.brain.onLabel = (label, rule, diagnostics) => {
+      this.hud.setCurrentLogic(label, rule, this.ctx.overlogic.active);
+      if (diagnostics) {
+        this.hud.updateDiagnostics(diagnostics);
+      }
+    };
 
     // Wire robot HUD callbacks
     this.robot.onHp = (hp, mx) => this.hud.setHp(hp, mx);
@@ -79,6 +114,13 @@ export class CombatArena {
     this.robot.onShield = (on) => this.hud.setShield(on);
     this.robot.onOverdrive = (on) => this.hud.setOverdrive(on);
     this.robot.onDied = () => this._finish(false);
+    this.robot.onDamage = (amount, source) => {
+      this.hud.logConsole(`System Alert: Took ${amount.toFixed(0)} DMG from ${source}`, 'warn');
+      this.camera.shake(0.25, amount * 1.2);
+    };
+    this.ctx.onEnemyDied = (enemyId, displayName) => {
+      this.hud.logConsole(`Unit Terminated: ${displayName}`, 'success');
+    };
 
     // Build wave spawn schedule
     const waves = {};
@@ -124,6 +166,7 @@ export class CombatArena {
         this._spawnWave(w.spawns);
         this.currentWave += 1;
         this.hud.setWave(this.currentWave, this.totalWaves);
+        this.hud.logConsole(`System Info: Wave ${this.currentWave}/${this.totalWaves} deployed`, 'info');
         this.pendingWaves.splice(i, 1);
       }
     }
@@ -143,8 +186,10 @@ export class CombatArena {
     for (const p of [...this.ctx.projectiles]) p.tick(dt);
     // Mines
     for (const m of [...this.ctx.mines]) m.tick(dt);
+    // Hazards
+    for (const h of this.ctx.hazards) h.tick(dt, this.ctx);
     // Particles
-    for (const p of this.ctx.particles) p.tick(dt);
+    for (const p of this.ctx.particles) p.tick(dt, this.ctx);
     this.ctx.particles = this.ctx.particles.filter(p => !p.dead);
     // Clean dead enemies (removed immediately on death; brief death burst is spawned in takeDamage)
     this.ctx.enemies = this.ctx.enemies.filter(e => !e.dead);
@@ -191,10 +236,16 @@ export class CombatArena {
         this.ctx.enemies.push(e);
         if (s.enemyId === 'boss_warden') {
           this.ctx.boss = e;
+          this.hud.logConsole(`CRITICAL WARNING: Boss Protocol Warden detected!`, 'danger');
           e.onPhaseChanged = (p) => {
-            this.camera.shake(0.3, 8);
+            this.camera.shake(0.35, 10);
             this.hud.showPhaseToast(`PROTOCOL WARDEN: PHASE ${p}`);
             this._phaseToastTimer = 1.6;
+            this.hud.logConsole(`Boss Alert: Protocol Warden entered Phase ${p}!`, 'danger');
+          };
+          e.onLaserFire = () => {
+            this.camera.shake(0.4, 15);
+            AudioManager.play('boss_phase');
           };
           this.hud.showBossBar(data.displayName);
         }
@@ -220,8 +271,11 @@ export class CombatArena {
       AudioManager.play('defeat');
       // store report for PostBattleReportUI
       GameState.lastReport = this.ctx.tracker.toReport();
+      this.hud.logConsole(`SIMULATION FAILED: Robot chassis destroyed. Core critical dump.`, 'danger');
     } else {
       AudioManager.play('victory');
+      GameState.lastReport = this.ctx.tracker.toReport();
+      this.hud.logConsole(`SIMULATION SUCCESS: Threat neutralized. Area secured.`, 'success');
     }
     this.hud.hideBossBar();
     if (this.onFinished) this.onFinished(won);
@@ -229,8 +283,19 @@ export class CombatArena {
 
   setPaused(p) { this.paused = p; }
   togglePause() { this.paused = !this.paused; }
+  stepFrame() {
+    if (!this.paused || this._finished) return;
+    this._update(0.15);
+    this._render();
+  }
   setSpeed(s) { this.speed = s; }
-  toggleSpeed() { this.speed = this.speed === 1 ? 2 : 1; return this.speed; }
+  toggleSpeed() {
+    if (this.speed === 0.5) this.speed = 1;
+    else if (this.speed === 1) this.speed = 2;
+    else if (this.speed === 2) this.speed = 4;
+    else this.speed = 0.5;
+    return this.speed;
+  }
 
   stop() {
     this._finished = true;

@@ -47,4 +47,83 @@ export class ShooterEnemy extends EnemyBase {
     p.setCtx(this.ctx);
     this.ctx.projectiles.push(p);
   }
+
+  draw(g, scale) {
+    if (this.dead) { super.draw(g, scale); return; }
+    const rPx = this.bodyRadius * scale;
+    g.save();
+    g.translate(this.x * scale, this.y * scale);
+    
+    // Rotate towards target player
+    const r = this.ctx.robot;
+    if (r) {
+      const angle = Math.atan2(r.y - this.y, r.x - this.x);
+      g.rotate(angle);
+    }
+    
+    g.shadowColor = '#ff9d3e';
+    g.shadowBlur = 8;
+    g.strokeStyle = '#ff9d3e';
+    g.lineWidth = 2;
+    
+    // Hexagonal Hover chassis
+    g.fillStyle = '#1e140a';
+    g.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const px = Math.cos(a) * rPx;
+      const py = Math.sin(a) * rPx;
+      if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+    g.fill();
+    g.stroke();
+    
+    // Spinning stabilizer rings (draw as ellipse overlay)
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(255, 157, 62, 0.4)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(0, 0, rPx * 1.3, 0, Math.PI * 2);
+    g.stroke();
+    
+    // Weapon pod nozzle pointing forward
+    g.fillStyle = '#ff9d3e';
+    g.shadowBlur = 6;
+    g.fillRect(rPx * 0.35, -rPx * 0.18, rPx * 0.65, rPx * 0.36);
+    
+    g.restore();
+
+    // Laser sight aiming reticle (if close to firing)
+    if (this.attackTimer > 0 && this.attackTimer < 0.6) {
+      const r = this.ctx.robot;
+      if (r) {
+        g.save();
+        g.strokeStyle = 'rgba(255, 157, 62, 0.5)';
+        g.lineWidth = 1;
+        g.setLineDash([4, 4]);
+        g.beginPath();
+        g.moveTo(this.x * scale, this.y * scale);
+        g.lineTo(r.x * scale, r.y * scale);
+        g.stroke();
+        
+        // Target crosshair reticle at player position
+        g.strokeStyle = 'rgba(255, 157, 62, 0.75)';
+        g.setLineDash([]);
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.arc(r.x * scale, r.y * scale, 8, 0, Math.PI * 2);
+        g.stroke();
+        
+        g.beginPath();
+        g.moveTo(r.x * scale - 12, r.y * scale); g.lineTo(r.x * scale + 12, r.y * scale);
+        g.moveTo(r.x * scale, r.y * scale - 12); g.lineTo(r.x * scale, r.y * scale + 12);
+        g.stroke();
+        
+        g.restore();
+      }
+    }
+    
+    this.drawHpBar(g, scale);
+  }
 }

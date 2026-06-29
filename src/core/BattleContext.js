@@ -22,6 +22,7 @@ export class BattleContext {
     this.boss = null;
     this.timeSpeed = 1;       // combat speed multiplier (x1 / x2)
     this._lastCasting = false; // for casting-seen edge detection
+    this.hazards = [];        // live HazardTile instances
   }
 
   // Returns nearest live enemy instance or null.
@@ -78,6 +79,16 @@ export class BattleContext {
     const edge = now && !this._lastCasting;
     this._lastCasting = now;
     return edge;
+  }
+
+  isRobotOnHazard() {
+    if (!this.robot || this.robot.dead) return false;
+    for (const h of this.hazards) {
+      if (h.isOverlapping(this.robot)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
