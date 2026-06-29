@@ -27,13 +27,21 @@
     <div id="how-overlay" class="overlay hidden">
       <div class="overlay-card">
         <h2>How to Play</h2>
-        <ul>
-          <li>You do not control the robot. You write its <b>logic</b>.</li>
-          <li>Each rule: <span class="kbd">IF condition THEN action PRIORITY n</span></li>
-          <li>Every 0.15s the robot checks all rules, runs the highest-priority valid one.</li>
-          <li>Win battles → pick rewards → strengthen or unlock new modules.</li>
-          <li>Fail → read the debug report → change one rule → win.</li>
-        </ul>
+        <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #4be1ff;">① You control the logic, not the robot.</span><br>
+          Write rules that your robot follows autonomously during combat.</div>
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #4be1ff;">② Rule structure:</span><br>
+          <span class="kbd">IF [condition] THEN [action]</span> with an optional AND/OR second condition.<br>
+          Higher priority rules execute first when valid.</div>
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #4be1ff;">③ Every 0.15s</span> your robot evaluates all rules and executes the highest-priority valid one.</div>
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #4be1ff;">④ HP persists</span> between battles — manage your health carefully. Use Repair nodes wisely!</div>
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #4be1ff;">⑤ Win battles → Pick rewards</span> — unlock new actions, conditions, and stat upgrades.<br>
+          Lose → Read the debug report → Fix one rule → Retry.</div>
+          <div style="margin-bottom: 12px;"><span class="kbd" style="color: #ffb938;">Example rules:</span><br>
+          <span class="kbd">IF hp_low (&lt;30%) → THEN shield</span><br>
+          <span class="kbd">IF enemy_casting → THEN interrupt_shot</span><br>
+          <span class="kbd">IF hp_above (70%) OR energy_high (80%) → THEN overdrive</span></div>
+        </div>
         <button id="btn-how-close" class="btn primary">Close</button>
       </div>
     </div>
@@ -102,6 +110,7 @@
           <select id="f-op" style="width: 80px;">
             <option value="">None</option>
             <option value="and">AND</option>
+            <option value="or">OR</option>
           </select>
           <select id="f-cond2" class="hidden"></select>
           <span id="f-cond2-param" class="hidden"></span>
@@ -208,11 +217,16 @@
     <h1 class="logo">SIMULATION COMPLETE</h1>
     <p class="subtitle">// your logic survived</p>
     <p class="muted">The machine learned from you.</p>
-    <div class="report-card" style="max-width: 680px; width: 100%; display: flex; flex-direction: column; align-items: center;">
-      <h3>Final Run Statistics</h3>
+    <div id="victory-run-stats" class="victory-stats-grid"></div>
+    <div class="report-card" style="max-width: 680px; width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 16px;">
+      <h3>Final Run Performance</h3>
       <canvas id="chart-victory" width="680" height="200" style="width: 100%; height: 200px; border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 4px; margin-top: 10px;"></canvas>
     </div>
-    <button id="btn-victory-menu" class="btn primary big">Return to Menu</button>
+    <div class="report-card" style="max-width: 680px; width: 100%; margin-top: 16px;">
+      <h3>Your Final Logic (Rule Replay)</h3>
+      <div id="victory-rules-summary"></div>
+    </div>
+    <button id="btn-victory-menu" class="btn primary big" style="margin-top: 24px;">Return to Menu</button>
   </section>
 
 </div>

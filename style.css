@@ -1363,3 +1363,216 @@ body {
   0% { opacity: 0.65; filter: drop-shadow(0 0 2px rgba(255, 185, 56, 0.3)); }
   100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(255, 185, 56, 0.8)); }
 }
+
+/* ===== Empty Rule List Guide Card ===== */
+.rule-empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  margin: 8px 0;
+  border: 1px dashed rgba(75, 225, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 210, 255, 0.02);
+  text-align: center;
+  animation: guideFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes guideFloat {
+  0% { border-color: rgba(75, 225, 255, 0.15); }
+  100% { border-color: rgba(75, 225, 255, 0.4); box-shadow: 0 0 16px rgba(0, 210, 255, 0.06); }
+}
+
+.guide-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 12px rgba(0, 210, 255, 0.5));
+  animation: iconPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes iconPulse {
+  0% { transform: scale(0.95); }
+  100% { transform: scale(1.08); }
+}
+
+.guide-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--txt);
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.guide-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  max-width: 380px;
+}
+
+.guide-example {
+  font-size: 11px;
+  color: rgba(75, 225, 255, 0.7);
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(0, 210, 255, 0.05);
+  border: 1px solid rgba(0, 210, 255, 0.12);
+  padding: 6px 14px;
+  border-radius: 4px;
+}
+
+/* ===== Victory Screen Run Stats Grid ===== */
+.victory-stats-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 20px 0;
+  max-width: 680px;
+  width: 100%;
+}
+
+.victory-stat {
+  background: rgba(0, 210, 255, 0.06);
+  border: 1px solid rgba(0, 210, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.victory-stat:hover {
+  border-color: rgba(0, 210, 255, 0.5);
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.12);
+}
+
+.victory-stat .stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.victory-stat .stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  font-family: 'Share Tech Mono', monospace;
+  text-shadow: 0 0 12px rgba(0, 210, 255, 0.5);
+}
+
+/* ===== Victory Rules List Replay ===== */
+.victory-rules-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.victory-rules-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 210, 255, 0.03);
+  border: 1px solid rgba(0, 210, 255, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--txt);
+  transition: border-color 0.2s;
+}
+
+.victory-rules-list li:hover {
+  border-color: rgba(0, 210, 255, 0.3);
+}
+
+.rule-prio-badge {
+  background: rgba(0, 210, 255, 0.15);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+}
+
+.rule-cond {
+  color: #4be1ff;
+}
+
+.rule-act {
+  color: var(--accent2);
+}
+
+/* ===== Reward UI Enhancements ===== */
+.reward-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(0, 210, 255, 0.03);
+  border: 1px solid rgba(0, 210, 255, 0.12);
+  border-radius: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  max-width: 780px;
+  width: 100%;
+}
+
+.reward-summary-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: auto;
+}
+
+.reward-summary-stat {
+  font-size: 12px;
+  color: var(--txt);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.reward-card .r-pick-hint {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.reward-card:hover .r-pick-hint {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.reward-card {
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.2s, box-shadow 0.2s;
+}
+
+.reward-card:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* ===== Screen-Victory layout fix ===== */
+#screen-victory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  overflow-y: auto;
+}
+

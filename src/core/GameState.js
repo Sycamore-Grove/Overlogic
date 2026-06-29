@@ -3,8 +3,7 @@
 
 import { GameDatabase } from './GameDatabase.js';
 
-// Base stats from DESIGN.md §7.1
-// Base stats from DESIGN.md §7.1 + Round 11 Custom Upgrades
+// Base stats from DESIGN.md §7.1 + extended upgrades
 function baseStats() {
   return {
     max_hp: 100, max_energy: 100, energy_regen: 8,
@@ -27,6 +26,7 @@ class GameStateClass {
     this.onUpgradeNodeTriggered = null;
     this.teachNode = 1;
     this.stats = baseStats();
+    this.persistentHp = null;         // HP carry-over between battles (null = full)
     this.unlockedConditionIds = [];   // extra conditions from rewards
     this.unlockedActionIds = [];      // extra actions from rewards
     this.rules = [];
@@ -51,6 +51,7 @@ class GameStateClass {
     this._initMap();
     this.teachNode = 1;
     this.stats = baseStats();
+    this.persistentHp = null;
     this.unlockedConditionIds = [];
     this.unlockedActionIds = [];
     this.lastReport = {};
@@ -108,11 +109,20 @@ class GameStateClass {
   }
 
   // Called when a battle is won. reward_id may be '' for final boss skip.
-  onBattleWon(rewardId) {
+  // persistentHp: carry the robot's ending HP into the next battle (no full heal).
+  onBattleWon(rewardId, endHp = null) {
     if (rewardId !== '') {
       const reward = GameDatabase.getReward(rewardId);
       if (reward) this._applyReward(reward);
       else console.error('GameState: unknown reward', rewardId);
+    }
+
+    // Persist HP — robots start next battle with whatever HP they finished with.
+    // Clamp to current max_hp (in case upgrades increased it).
+    if (endHp !== null && typeof endHp === 'number' && endHp > 0) {
+      this.persistentHp = Math.min(endHp, this.stats.max_hp);
+    } else {
+      this.persistentHp = null; // full heal fallback
     }
 
     const colNodes = this.mapNodes[this.currentMapColumn];
@@ -172,9 +182,12 @@ class GameStateClass {
   _applyPassive(target, value) {
     switch (target) {
       case 'max_hp':        this.stats.max_hp += value; break;
+      case 'max_energy':    this.stats.max_energy += value; break;
+      case 'move_speed':    this.stats.move_speed += value; break;
       case 'energy_regen':  this.stats.energy_regen *= value; break;
       case 'basic_dmg':     this.stats.basic_dmg *= value; break;
       case 'dash_cd':       this.stats.dash_cd *= value; break;
+      case 'shield_cd':     this.stats.shield_cd *= value; break;
       case 'shield_dur':    this.stats.shield_dur += value; break;
       case 'overdrive_dur': this.stats.overdrive_dur += value; break;
       case 'interrupt_cd':  this.stats.interrupt_cd *= value; break;
@@ -332,20 +345,35 @@ class GameStateClass {
 
   _initMap() {
     this.mapNodes = [
+      // Col 0
       [ { id: '0_start', type: 'combat', battleIndex: 0, label: 'Calibration', completed: false } ],
+      // Col 1 — branch A: ranged, B: chargers
       [
         { id: '1_a', type: 'combat', battleIndex: 1, label: 'Distance Test', completed: false },
         { id: '1_b', type: 'combat', battleIndex: 2, label: 'Charge Warning', completed: false }
       ],
+      // Col 2 — branch A: swarm, B: EMP drones
       [
         { id: '2_a', type: 'combat', battleIndex: 3, label: 'Swarm', completed: false },
-        { id: '2_b', type: 'repair', label: 'Nano-Repair (+25 Max HP)', completed: false }
+        { id: '2_b', type: 'combat', battleIndex: 4, label: 'Shadow Grid', completed: false }
       ],
+      // Col 3 — branch A: Iron Tide (elite chargers), B: Nano-Repair
       [
-        { id: '3_a', type: 'combat', battleIndex: 4, label: 'Mixed Protocol', completed: false },
-        { id: '3_b', type: 'upgrade', label: 'Upgrade Vault (Pick Passive)', completed: false }
+        { id: '3_a', type: 'combat', battleIndex: 5, label: 'Iron Tide', completed: false },
+        { id: '3_b', type: 'repair', label: 'Nano-Repair (+25 Max HP)', completed: false }
       ],
-      [ { id: '4_boss', type: 'combat', battleIndex: 5, label: 'Protocol Warden', completed: false } ]
+      // Col 4 — branch A: mixed, B: Crucible (all enemies)
+      [
+        { id: '4_a', type: 'combat', battleIndex: 6, label: 'Mixed Protocol', completed: false },
+        { id: '4_b', type: 'combat', battleIndex: 7, label: 'Crucible', completed: false }
+      ],
+      // Col 5 — Upgrade Vault
+      [ { id: '5_upgrade', type: 'upgrade', label: 'Upgrade Vault (Pick Passive)', completed: false } ],
+      // Col 6 — Final Boss choice: Warden or Apex Warden
+      [
+        { id: '6_boss', type: 'combat', battleIndex: 8, label: 'Protocol Warden', completed: false },
+        { id: '6_apex', type: 'combat', battleIndex: 9, label: 'Apex Warden ★', completed: false }
+      ]
     ];
   }
 
@@ -401,6 +429,7 @@ class GameStateClass {
         mapNodes: this.mapNodes,
         teachNode: this.teachNode,
         stats: this.stats,
+        persistentHp: this.persistentHp,
         unlockedConditionIds: this.unlockedConditionIds,
         unlockedActionIds: this.unlockedActionIds,
         rules: this.rules,
@@ -426,6 +455,7 @@ class GameStateClass {
       }
       this.teachNode = data.teachNode ?? 1;
       this.stats = data.stats ?? baseStats();
+      this.persistentHp = data.persistentHp ?? null;
       this.unlockedConditionIds = data.unlockedConditionIds ?? [];
       this.unlockedActionIds = data.unlockedActionIds ?? [];
       this.rules = data.rules ?? [];
@@ -488,6 +518,8 @@ class GameStateClass {
 
   availableConditionIds() {
     const out = GameDatabase.conditionsUnlockedByTeach(this.teachNode);
+    // Unlock hp_above at teach 2+ alongside enemy_far
+    if (this.teachNode >= 2 && !out.includes('hp_above')) out.push('hp_above');
     for (const id of this.unlockedConditionIds) if (!out.includes(id)) out.push(id);
     return out;
   }

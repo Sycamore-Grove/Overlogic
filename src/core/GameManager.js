@@ -38,7 +38,8 @@ class GameManagerClass {
       const activeBattle = GameState.getActiveBattle();
       const isLast = activeBattle && activeBattle.battleIndex >= GameDatabase.getBattleCount() - 1;
       if (isLast) {
-        GameState.onBattleWon('');
+        const endHp = GameState.lastReport._endHp || null;
+        GameState.onBattleWon('', endHp);
         this.goVictory();
       } else {
         this.goRewardSelection();
@@ -50,11 +51,12 @@ class GameManagerClass {
 
   // Called by RewardScreen after player picks a reward.
   onRewardChosen(rewardId) {
+    const endHp = GameState.lastReport._endHp || null;
     if (this.isUpgradeReward) {
       GameState.onUpgradeNodeChosen(rewardId);
       this.isUpgradeReward = false;
     } else {
-      GameState.onBattleWon(rewardId);
+      GameState.onBattleWon(rewardId, endHp);
     }
     if (GameState.isDemoCleared()) this.goVictory();
     else this.goLogicEdit();

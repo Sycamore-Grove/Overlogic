@@ -1,4 +1,5 @@
 // ConditionEvaluator.js — stateless evaluator. evaluate(robot, ctx, rule) -> bool.
+// Supports AND / OR compound conditions.
 // Mirrors scripts/logic/ConditionEvaluator.gd.
 
 export class ConditionEvaluator {
@@ -7,6 +8,10 @@ export class ConditionEvaluator {
     if (rule.operator === 'and' && rule.conditionId2) {
       const cond2 = this.evaluateSingle(robot, ctx, rule.conditionId2, rule.conditionValue2);
       return cond1 && cond2;
+    }
+    if (rule.operator === 'or' && rule.conditionId2) {
+      const cond2 = this.evaluateSingle(robot, ctx, rule.conditionId2, rule.conditionValue2);
+      return cond1 || cond2;
     }
     return cond1;
   }
@@ -25,6 +30,10 @@ export class ConditionEvaluator {
       case 'hp_low': {
         const p = +val;
         return robot.hp / robot.maxHp <= p;
+      }
+      case 'hp_above': {
+        const p = +val;
+        return robot.hp / robot.maxHp >= p;
       }
       case 'energy_high': {
         const p = +val;
@@ -49,6 +58,20 @@ export class ConditionEvaluator {
       }
       case 'on_hazard':
         return ctx.isRobotOnHazard();
+      case 'shield_active':
+        return robot.shieldActive === true;
+      case 'overdrive_ready': {
+        // True if overdrive is NOT on cooldown and robot has >= 40 energy
+        if (robot.energy < 40) return false;
+        // Check via executor stored in ctx if possible
+        const executor = ctx.executor;
+        if (executor) return !executor.isOnCooldown('overdrive');
+        return true;
+      }
+      case 'enemy_count_low': {
+        const n = val | 0;
+        return ctx.liveEnemies() <= n;
+      }
       default:
         return false;
     }

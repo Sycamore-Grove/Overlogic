@@ -15,6 +15,7 @@ import { CrawlerEnemy } from '../enemies/CrawlerEnemy.js';
 import { ShooterEnemy } from '../enemies/ShooterEnemy.js';
 import { ChargerEnemy } from '../enemies/ChargerEnemy.js';
 import { BossProtocolWarden } from '../enemies/BossProtocolWarden.js';
+import { EmpDroneEnemy } from '../enemies/EmpDroneEnemy.js';
 import { spawnBurst } from '../vfx/ParticleSystem.js';
 import { HazardTile } from '../vfx/HazardTile.js';
 
@@ -23,7 +24,9 @@ const ENEMY_CLASSES = {
   crawler: CrawlerEnemy,
   shooter: ShooterEnemy,
   charger: ChargerEnemy,
+  emp_drone: EmpDroneEnemy,
   boss_warden: BossProtocolWarden,
+  apex_warden: BossProtocolWarden,   // reuse boss class; stats differ via data JSON
 };
 
 export class CombatArena {
@@ -80,16 +83,26 @@ export class CombatArena {
 
     // Spawn environmental hazards depending on battle
     this.ctx.hazards = [];
-    if (battle.id === 'battle_4') {
+    if (battle.id === 'battle_4' || battle.id === 'battle_6') {
+      // Swarm / Iron Tide — plasma hazards
       this.ctx.hazards.push(new HazardTile(-4, -4, 2.0));
       this.ctx.hazards.push(new HazardTile(4, 4, 2.0));
       this.hud.logConsole(`System Warning: 2 Plasma Hazards detected in sector!`, 'warn');
-    } else if (battle.id === 'battle_5') {
+    } else if (battle.id === 'battle_5' || battle.id === 'battle_7') {
+      // Shadow Grid / Mixed Protocol — 3 hazards
       this.ctx.hazards.push(new HazardTile(-5, 3, 2.2));
       this.ctx.hazards.push(new HazardTile(5, -3, 2.2));
       this.ctx.hazards.push(new HazardTile(0, 0, 1.8));
       this.hud.logConsole(`System Warning: 3 Plasma Hazards detected in sector!`, 'warn');
-    } else if (battle.id === 'battle_6') {
+    } else if (battle.id === 'battle_8') {
+      // Crucible — heavy hazards
+      this.ctx.hazards.push(new HazardTile(-6, -6, 2.5));
+      this.ctx.hazards.push(new HazardTile(6, 6, 2.5));
+      this.ctx.hazards.push(new HazardTile(-6, 6, 2.5));
+      this.ctx.hazards.push(new HazardTile(6, -6, 2.5));
+      this.hud.logConsole(`CRITICAL: 4 High-Output Plasma Hazards active in Crucible Arena!`, 'danger');
+    } else if (battle.id === 'battle_9' || battle.id === 'battle_10') {
+      // Warden / Apex Warden boss arenas
       this.ctx.hazards.push(new HazardTile(-6, -6, 2.5));
       this.ctx.hazards.push(new HazardTile(6, 6, 2.5));
       this.ctx.hazards.push(new HazardTile(-6, 6, 2.5));
@@ -99,6 +112,8 @@ export class CombatArena {
 
     this.executor = new ActionExecutor();
     this.executor.setup(this.robot, this.ctx, this.stats, this.ctx.tracker);
+    // expose executor to ctx for condition evaluation (overdrive_ready)
+    this.ctx.executor = this.executor;
     this.brain = new LogicBrain();
     this.brain.setup(this.robot, this.ctx, this.executor, this.ctx.tracker);
     this.brain.onLabel = (label, rule, diagnostics) => {
@@ -262,19 +277,20 @@ export class CombatArena {
     if (this._finished) return;
     this._finished = true;
     cancelAnimationFrame(this._rafId);
-    // snapshot death state if lost
+    const endHp = this.robot.hp; // capture HP for persistence
     if (!won) {
       this.ctx.tracker.snapshotDeath(
         this.robot.hp, this.robot.energy,
         this.ctx.countEnemiesWithin({ x: this.robot.x, y: this.robot.y }, 4)
       );
       AudioManager.play('defeat');
-      // store report for PostBattleReportUI
       GameState.lastReport = this.ctx.tracker.toReport();
       this.hud.logConsole(`SIMULATION FAILED: Robot chassis destroyed. Core critical dump.`, 'danger');
     } else {
       AudioManager.play('victory');
       GameState.lastReport = this.ctx.tracker.toReport();
+      // Pass endHp so the next battle starts with this HP
+      GameState.lastReport._endHp = endHp;
       this.hud.logConsole(`SIMULATION SUCCESS: Threat neutralized. Area secured.`, 'success');
     }
     this.hud.hideBossBar();

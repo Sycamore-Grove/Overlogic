@@ -165,6 +165,23 @@ class AudioManagerClass {
         this._sweep(120, 40, 0.3, 0.3, 'sawtooth', pan);
         this._noise(0.3, 0.25, 300, pan);
         break;
+      case 'emp_burst':
+        // Low freq thump + electric crackle
+        this._sweep(80, 25, 0.35, 0.4, 'sawtooth', pan);
+        this._noise(0.25, 0.2, 200, pan);
+        this._tone(440, 0.08, 0.15, 'square', pan);
+        break;
+      case 'energy_transfer':
+        // Flowing energy whoosh rising pitch
+        this._sweep(220, 880, 0.2, 0.2, 'sine', pan);
+        this._sweep(150, 600, 0.15, 0.12, 'triangle', pan);
+        break;
+      case 'dash_through':
+        // Aggressive fast sweep with impact
+        this._sweep(400, 1600, 0.09, 0.2, 'sawtooth', pan);
+        this._noise(0.06, 0.12, 1200, pan);
+        this._tone(200, 0.05, 0.1, 'square', pan);
+        break;
       default: 
         break;
     }

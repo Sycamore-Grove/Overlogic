@@ -204,13 +204,25 @@ export class LogicEditorUI {
         <span></span>
         <span style="text-align: center;">PRIO</span>
         <span>IF CONDITION 1</span>
-        <span>OPERATOR</span>
+        <span>AND/OR</span>
         <span>IF CONDITION 2</span>
         <span>THEN ACTION</span>
         <span>TARGET</span>
         <span style="text-align: center;">DEL</span>
       `;
       this.ruleList.appendChild(header);
+    } else {
+      // Empty state guide card
+      const guide = document.createElement('div');
+      guide.className = 'rule-empty-guide';
+      guide.innerHTML = `
+        <div class="guide-icon">⚡</div>
+        <div class="guide-title">No Rules Programmed</div>
+        <div class="guide-desc">Your robot has no logic — it will default to pursuing enemies.<br>
+          Click <strong>+ Add Rule</strong> above to define your first directive.</div>
+        <div class="guide-example">Example: <span class="kbd">IF hp_low → THEN shield</span></div>
+      `;
+      this.ruleList.appendChild(guide);
     }
 
     // Sort rules by priority descending first so they display in order in the editor

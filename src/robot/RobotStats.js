@@ -6,11 +6,14 @@ import { GameDatabase } from '../core/GameDatabase.js';
 
 export class RobotStats {
   constructor() { this.base = {}; }
-  loadFromGameState() { this.base = { ...GameState.stats }; }
+  loadFromGameState() {
+    this.base = { ...GameState.stats };
+    // Track persistent HP for carry-over
+    this.startingHp = GameState.persistentHp; // null means full HP
+  }
   stat(key, def = 0) { return this.base[key] !== undefined ? this.base[key] : def; }
 
   // Per-action effective cooldown (after passives + overdrive + overlogic).
-  // Multipliers express SPEED-up: cooldown = base_cd / mul. Higher mul = shorter cd.
   actionCooldown(actionId, robotRef) {
     const baseCd = this._baseCd(actionId);
     let mul = 1;
@@ -19,7 +22,6 @@ export class RobotStats {
       const ov = robotRef.ctx && robotRef.ctx.overlogic;
       if (ov) {
         if (actionId === 'basic_attack' || actionId === 'interrupt_shot') {
-          // atkCdMul returns 0.7 when active; convert to speed-up mul of 1/0.7
           mul *= 1 / ov.atkCdMul();
         } else {
           mul *= 1 / ov.skillCdMul();
@@ -32,14 +34,17 @@ export class RobotStats {
 
   _baseCd(actionId) {
     switch (actionId) {
-      case 'basic_attack': return this.base.basic_cd;
+      case 'basic_attack':    return this.base.basic_cd;
       case 'dash_toward':
-      case 'dash_away':    return this.base.dash_cd;
-      case 'shield':       return this.base.shield_cd;
-      case 'interrupt_shot': return this.base.interrupt_cd;
-      case 'overdrive':    return this.base.overdrive_cd;
-      case 'repair':       return GameDatabase.getAction('repair')?.cooldown || 12;
-      case 'drop_mine':    return GameDatabase.getAction('drop_mine')?.cooldown || 6;
+      case 'dash_away':       return this.base.dash_cd;
+      case 'shield':          return this.base.shield_cd;
+      case 'interrupt_shot':  return this.base.interrupt_cd;
+      case 'overdrive':       return this.base.overdrive_cd;
+      case 'repair':          return GameDatabase.getAction('repair')?.cooldown || 12;
+      case 'drop_mine':       return GameDatabase.getAction('drop_mine')?.cooldown || 6;
+      case 'emp_burst':       return GameDatabase.getAction('emp_burst')?.cooldown || 12;
+      case 'energy_transfer': return GameDatabase.getAction('energy_transfer')?.cooldown || 10;
+      case 'dash_through':    return GameDatabase.getAction('dash_through')?.cooldown || 5;
       default: return 1;
     }
   }

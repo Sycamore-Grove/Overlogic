@@ -7,6 +7,9 @@
     { "id": "interrupt_shot", "displayName": "Interrupt Shot", "description": "Shot that interrupts casting enemies.", "cooldown": 5.0, "energyCost": 20, "range": 8.0, "effectValue": { "dmg": 6, "bulletSpeed": 14.0, "bulletLife": 2.0 }, "teachUnlock": 3 },
     { "id": "overdrive", "displayName": "Overdrive", "description": "Temp buff: atk speed +50%, move speed +25%.", "cooldown": 15.0, "energyCost": 40, "range": 0.0, "effectValue": { "duration": 5.0, "atkSpdMul": 1.5, "moveSpdMul": 1.25 }, "teachUnlock": 4 },
     { "id": "repair", "displayName": "Repair", "description": "Restore 25 HP.", "cooldown": 12.0, "energyCost": 35, "range": 0.0, "effectValue": { "heal": 25 }, "teachUnlock": null, "rewardUnlock": 3 },
-    { "id": "drop_mine", "displayName": "Drop Mine", "description": "Drop a mine that explodes when enemy near.", "cooldown": 6.0, "energyCost": 20, "range": 0.0, "effectValue": { "triggerRadius": 1.5, "explosionRadius": 2.0, "dmg": 20 }, "teachUnlock": null, "rewardUnlock": 4 }
+    { "id": "drop_mine", "displayName": "Drop Mine", "description": "Drop a mine that explodes when enemy near.", "cooldown": 6.0, "energyCost": 20, "range": 0.0, "effectValue": { "triggerRadius": 1.5, "explosionRadius": 2.0, "dmg": 20 }, "teachUnlock": null, "rewardUnlock": 4 },
+    { "id": "emp_burst", "displayName": "EMP Burst", "description": "Area electromagnetic pulse stuns nearby enemies for 0.8s.", "cooldown": 12.0, "energyCost": 45, "range": 0.0, "effectValue": { "radius": 5.0, "stunDuration": 0.8 }, "teachUnlock": null, "rewardUnlock": 7 },
+    { "id": "energy_transfer", "displayName": "Energy Transfer", "description": "Drain shield buffer to instantly restore +35 energy.", "cooldown": 10.0, "energyCost": 0, "range": 0.0, "effectValue": { "restore": 35 }, "teachUnlock": null, "rewardUnlock": 8 },
+    { "id": "dash_through", "displayName": "Dash Through", "description": "Dash through nearest enemy, dealing damage on pass.", "cooldown": 5.0, "energyCost": 15, "range": 8.0, "effectValue": { "dashDist": 4.0, "dmg": 14, "invulnTime": 0.1 }, "teachUnlock": null, "rewardUnlock": 9 }
   ]
 }

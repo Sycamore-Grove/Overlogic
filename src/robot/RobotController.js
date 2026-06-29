@@ -32,7 +32,11 @@ export class RobotController {
 
   initFromStats(stats, ctx) {
     this.stats = stats; this.ctx = ctx;
-    this.maxHp = stats.stat('max_hp', 100);    this.hp = this.maxHp;
+    this.maxHp = stats.stat('max_hp', 100);
+    // Apply persistent HP carry-over if available, otherwise start at full HP
+    this.hp = (stats.startingHp && stats.startingHp > 0)
+      ? Math.min(stats.startingHp, this.maxHp)
+      : this.maxHp;
     this.maxEnergy = stats.stat('max_energy', 100); this.energy = this.maxEnergy;
     this.moveSpeed = stats.stat('move_speed', 4);
     this.x = 0; this.y = 0;

@@ -5,6 +5,7 @@ import { GameDatabase } from '../core/GameDatabase.js';
 import { Projectile } from '../vfx/Projectile.js';
 import { Mine } from '../vfx/Mine.js';
 import { AudioManager } from '../systems/AudioManager.js';
+import { spawnBurst } from '../vfx/ParticleSystem.js';
 
 export class ActionExecutor {
   constructor() {
@@ -21,6 +22,8 @@ export class ActionExecutor {
     this.stats = stats;
     this.tracker = tracker;
     this.cooldowns.clear();
+    // Expose executor to context so conditions like overdrive_ready can query it
+    ctx.executor = this;
   }
 
   // Advance cooldown timers. dt is already combat-speed-scaled.
@@ -50,21 +53,24 @@ export class ActionExecutor {
     // Thermal Recycle: actions executed during Meltdown cool CPU temp by -10°C
     if (this.ctx && this.ctx.overlogic && this.ctx.overlogic.active && this.stats.stat('thermal_recycle', 0) > 0) {
       this.ctx.overlogic.value = Math.max(0, this.ctx.overlogic.value - 10);
-      this.ctx.overlogic._checkState(); // make sure active state updates immediately
+      this.ctx.overlogic._checkState();
       if (this.ctx.hud) {
         this.ctx.hud.logConsole(`Thermal Recycle: Action dumped heat! Cooled by -10°C`, 'success');
       }
     }
 
     switch (actionId) {
-      case 'basic_attack':   return this._basicAttack(rule);
-      case 'dash_toward':    return this._dash(true, rule);
-      case 'dash_away':      return this._dash(false, rule);
-      case 'shield':         return this._shield();
-      case 'interrupt_shot': return this._interruptShot();
-      case 'overdrive':      return this._overdrive();
-      case 'repair':         return this._repair();
-      case 'drop_mine':      this._dropMine(); return true;
+      case 'basic_attack':    return this._basicAttack(rule);
+      case 'dash_toward':     return this._dash(true, rule);
+      case 'dash_away':       return this._dash(false, rule);
+      case 'shield':          return this._shield();
+      case 'interrupt_shot':  return this._interruptShot();
+      case 'overdrive':       return this._overdrive();
+      case 'repair':          return this._repair();
+      case 'drop_mine':       this._dropMine(); return true;
+      case 'emp_burst':       return this._empBurst();
+      case 'energy_transfer': return this._energyTransfer();
+      case 'dash_through':    return this._dashThrough(rule);
       default: return false;
     }
   }
@@ -77,10 +83,7 @@ export class ActionExecutor {
       case 'lowest_hp': {
         let best = null, minHp = Infinity;
         for (const e of enemies) {
-          if (e.hp < minHp) {
-            minHp = e.hp;
-            best = e;
-          }
+          if (e.hp < minHp) { minHp = e.hp; best = e; }
         }
         return best;
       }
@@ -90,10 +93,7 @@ export class ActionExecutor {
           let best = null, minDist = Infinity;
           for (const c of casters) {
             const d = Math.hypot(c.x - this.robot.x, c.y - this.robot.y);
-            if (d < minDist) {
-              minDist = d;
-              best = c;
-            }
+            if (d < minDist) { minDist = d; best = c; }
           }
           if (best) return best;
         }
@@ -128,7 +128,6 @@ export class ActionExecutor {
     const dist = Math.hypot(e.x - this.robot.x, e.y - this.robot.y);
     const range = this.stats.actionRange('basic_attack');
     if (dist > range) {
-      // move toward, do not consume CD/energy
       const dx = e.x - this.robot.x, dy = e.y - this.robot.y;
       const len = Math.hypot(dx, dy) || 1;
       this.robot.moveIntent = { x: (dx/len) * this.robot.moveSpeed, y: (dy/len) * this.robot.moveSpeed };
@@ -213,6 +212,79 @@ export class ActionExecutor {
     this.robot.energy -= this.energyCost('drop_mine');
     this._startCd('drop_mine');
     AudioManager.play('basic_attack');
+  }
+
+  _empBurst() {
+    const a = GameDatabase.getAction('emp_burst');
+    const ev = a.effectValue;
+    const radius = ev.radius || 5.0;
+    const stunDur = ev.stunDuration || 0.8;
+    let hit = 0;
+    for (const e of this.ctx.enemies) {
+      if (e.dead) continue;
+      const dist = Math.hypot(e.x - this.robot.x, e.y - this.robot.y);
+      if (dist <= radius) {
+        e.stunTimer = stunDur;
+        hit++;
+      }
+    }
+    // Visual burst
+    spawnBurst(this.ctx, this.robot.x, this.robot.y, '#ffe033', 30, radius * 1.4, 0.4, 5);
+    this.robot.energy -= this.energyCost('emp_burst');
+    this._startCd('emp_burst');
+    AudioManager.play('emp_burst');
+    if (this.ctx.hud) {
+      this.ctx.hud.logConsole(`EMP Burst: ${hit} unit(s) stunned for ${stunDur}s`, 'success');
+    }
+    return true;
+  }
+
+  _energyTransfer() {
+    const a = GameDatabase.getAction('energy_transfer');
+    const ev = a.effectValue;
+    const restore = ev.restore || 35;
+    this.robot.energy = Math.min(this.robot.maxEnergy, this.robot.energy + restore);
+    // Briefly disable shield if active (costs shield buffer)
+    if (this.robot.shieldActive) {
+      this.robot.shieldActive = false;
+      this.robot.shieldTimer = 0;
+    }
+    this._startCd('energy_transfer');
+    AudioManager.play('energy_transfer');
+    if (this.ctx.hud) {
+      this.ctx.hud.logConsole(`Energy Transfer: Restored +${restore} energy`, 'success');
+    }
+    return true;
+  }
+
+  _dashThrough(rule) {
+    const priority = rule?.targetPriority || 'nearest';
+    const e = this._resolveTarget(priority);
+    if (!e) return false;
+    const dx = e.x - this.robot.x, dy = e.y - this.robot.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const dirX = dx / len, dirY = dy / len;
+    const a = GameDatabase.getAction('dash_through');
+    const ev = a.effectValue;
+    const dashDist = ev.dashDist || 4.0;
+    // Dash through: move past the enemy
+    this.robot.doDash({ x: dirX, y: dirY }, dashDist, ev.invulnTime || 0.1);
+    // Damage all enemies along the path (within dash line)
+    for (const enemy of this.ctx.enemies) {
+      if (enemy.dead) continue;
+      const ex = enemy.x - this.robot.x, ey = enemy.y - this.robot.y;
+      const proj = ex * dirX + ey * dirY;
+      if (proj >= 0 && proj <= dashDist) {
+        const perpDist = Math.abs(ex * dirY - ey * dirX);
+        if (perpDist <= enemy.bodyRadius + 0.5) {
+          enemy.takeDamage(ev.dmg || 14, 'dash_through');
+        }
+      }
+    }
+    this.robot.energy -= this.energyCost('dash_through');
+    this._startCd('dash_through');
+    AudioManager.play('dash_through');
+    return true;
   }
 
   // Cooldown fraction for HUD (0 = ready, 1 = just used).
