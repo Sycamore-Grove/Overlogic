@@ -23,9 +23,10 @@ export function formatLabel(rule, db) {
   if (!rule || !rule.conditionId) return 'Idle: default behavior';
   const cond1Str = formatCond(rule.conditionId, rule.conditionValue, db);
   let condStr = cond1Str;
-  if (rule.operator === 'and' && rule.conditionId2) {
+  if (rule.operator && rule.conditionId2) {
     const cond2Str = formatCond(rule.conditionId2, rule.conditionValue2, db);
-    condStr = `${cond1Str} AND ${cond2Str}`;
+    const opStr = rule.operator.toUpperCase();
+    condStr = `${cond1Str} ${opStr} ${cond2Str}`;
   }
   const a = db.getAction(rule.actionId);
   const aName = a ? a.displayName : rule.actionId;

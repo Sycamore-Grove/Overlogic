@@ -164,9 +164,10 @@ export class BattleHUD {
       
       const cond1Str = formatCond(r.conditionId, r.conditionValue, GameDatabase);
       let condStr = cond1Str;
-      if (r.operator === 'and' && r.conditionId2) {
+      if (r.operator && r.conditionId2) {
         const cond2Str = formatCond(r.conditionId2, r.conditionValue2, GameDatabase);
-        condStr = `${cond1Str} AND ${cond2Str}`;
+        const opStr = r.operator.toUpperCase();
+        condStr = `${cond1Str} ${opStr} ${cond2Str}`;
       }
       const a = GameDatabase.getAction(r.actionId);
       const aName = a ? a.displayName : r.actionId;

@@ -317,9 +317,15 @@ export class LogicEditorUI {
     if (r.operator === 'and') optAnd.selected = true;
     opSel.appendChild(optAnd);
 
+    const optOr = document.createElement('option');
+    optOr.value = 'or'; optOr.textContent = 'OR';
+    if (r.operator === 'or') optOr.selected = true;
+    opSel.appendChild(optOr);
+
     opSel.addEventListener('change', () => {
       GameState.setRuleOperator(r.id, opSel.value);
       AudioManager.play('button_click');
+      this.refreshList(); // refresh list to show/hide condition 2 fields!
     });
     row.appendChild(opSel);
 
@@ -331,7 +337,7 @@ export class LogicEditorUI {
     cond2Wrap.style.gap = '6px';
     cond2Wrap.style.width = '100%';
 
-    if (r.operator === 'and') {
+    if (r.operator === 'and' || r.operator === 'or') {
       const cond2Sel = this._condSelect(r.conditionId2 || 'hp_low');
       cond2Sel.style.flex = '1';
       cond2Sel.addEventListener('change', () => {
@@ -694,7 +700,7 @@ export class LogicEditorUI {
       const op = this.fOp.value || null;
       let condId2 = null;
       let val2 = null;
-      if (op === 'and') {
+      if (op === 'and' || op === 'or') {
         condId2 = this.fCond2.value;
         const c2 = GameDatabase.getCondition(condId2);
         val2 = this._readFormParam2(c2);
@@ -710,7 +716,7 @@ export class LogicEditorUI {
     this.fCond2.addEventListener('change', () => this._refreshFormParam2());
     this.fAct.addEventListener('change', () => this._toggleFormTarget());
     this.fOp.addEventListener('change', () => {
-      if (this.fOp.value === 'and') {
+      if (this.fOp.value === 'and' || this.fOp.value === 'or') {
         this.fCond2.classList.remove('hidden');
         this.fCond2Param.classList.remove('hidden');
       } else {
