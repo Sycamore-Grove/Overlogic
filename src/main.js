@@ -11,9 +11,17 @@ import { RewardUI } from './ui/RewardUI.js';
 import { PostBattleReportUI } from './ui/PostBattleReportUI.js';
 import { VictoryUI } from './ui/VictoryUI.js';
 import { AudioManager } from './systems/AudioManager.js';
+import { BackgroundAnim } from './systems/BackgroundAnim.js';
 
 async function main() {
   await GameDatabase.loadAll();
+
+  // Initialize and run the cyber background animation
+  const bgCanvas = document.getElementById('bg-canvas');
+  if (bgCanvas) {
+    const bgAnim = new BackgroundAnim(bgCanvas);
+    bgAnim.start();
+  }
 
   const mainMenu = new MainMenu();
   const logicEditor = new LogicEditorUI();
