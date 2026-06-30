@@ -77,10 +77,11 @@
       </aside>
 
       <main class="panel panel-rules" id="panel-rules">
-        <h3>Active Rules 
+        <h3 style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">Active Rules 
           <button id="btn-add-rule" class="btn small">+ Add Rule</button>
-          <button id="btn-undo" class="btn small ghost" style="margin-left:8px; padding:2px 8px;" title="Undo (Ctrl+Z)">Undo</button>
-          <button id="btn-redo" class="btn small ghost" style="margin-left:4px; padding:2px 8px;" title="Redo (Ctrl+Y)">Redo</button>
+          <button id="btn-undo" class="btn small ghost" style="padding:2px 8px;" title="Undo (Ctrl+Z)">Undo</button>
+          <button id="btn-redo" class="btn small ghost" style="padding:2px 8px;" title="Redo (Ctrl+Y)">Redo</button>
+          <input type="text" id="rules-search" class="search-input" style="width: 140px; margin-bottom: 0; margin-left: auto; height: 28px; padding: 2px 8px;" placeholder="Filter rules...">
         </h3>
         
         <!-- Slots Bar -->

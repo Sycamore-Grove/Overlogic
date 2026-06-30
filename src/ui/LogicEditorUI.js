@@ -36,6 +36,7 @@ export class LogicEditorUI {
     this.btnRun = document.getElementById('btn-run');
     this.btnSandbox = document.getElementById('btn-sandbox');
     this.mapNodesContainer = document.getElementById('map-nodes');
+    this.rulesSearch = document.getElementById('rules-search');
 
     if (this.condSearch) {
       this.condSearch.addEventListener('input', () => this.renderModules());
@@ -43,7 +44,11 @@ export class LogicEditorUI {
     if (this.actSearch) {
       this.actSearch.addEventListener('input', () => this.renderModules());
     }
+    if (this.rulesSearch) {
+      this.rulesSearch.addEventListener('input', () => this.renderRules());
+    }
 
+    this.lastSavedSlot = 1;
     this._bind();
     // re-render when state changes
     GameState.on('rules', () => this.renderRules());
@@ -92,6 +97,8 @@ export class LogicEditorUI {
         const nodeDiv = document.createElement('div');
         nodeDiv.className = 'map-node';
         nodeDiv.textContent = (node.type === 'combat' ? '⚔️ ' : (node.type === 'repair' ? '🔧 ' : '💎 ')) + node.label;
+        nodeDiv.dataset.tooltipType = 'map-node';
+        nodeDiv.dataset.nodeId = node.id;
         
         if (node.completed) {
           nodeDiv.classList.add('completed');
@@ -130,6 +137,8 @@ export class LogicEditorUI {
         `<span class="mod-desc">${c.description}</span>` +
         (c.parameterType !== 'none' ? `<span class="mod-meta">param: ${c.parameterType}</span>` : '');
       li.style.cursor = 'pointer';
+      li.dataset.tooltipType = 'condition';
+      li.dataset.tooltipId = id;
       
       // Double-click to quick-add
       li.addEventListener('dblclick', () => {
@@ -153,6 +162,8 @@ export class LogicEditorUI {
         `<span class="mod-desc">${a.description}</span>` +
         `<span class="mod-meta">cd ${a.cooldown}s · e${a.energyCost} · r${a.range}</span>`;
       li.style.cursor = 'pointer';
+      li.dataset.tooltipType = 'action';
+      li.dataset.tooltipId = id;
       
       // Double-click to quick-add
       li.addEventListener('dblclick', () => {
@@ -214,6 +225,8 @@ export class LogicEditorUI {
     this.ruleList.innerHTML = '';
     this._activeWarnings = this.analyzeRules();
 
+    const searchQuery = this.rulesSearch ? this.rulesSearch.value.toLowerCase() : '';
+
     // Add header row
     if (GameState.rules.length > 0) {
       const header = document.createElement('div');
@@ -246,6 +259,24 @@ export class LogicEditorUI {
     // Sort rules by priority descending first so they display in order in the editor
     const sortedRules = [...GameState.rules].sort((a, b) => b.priority - a.priority);
     for (const r of sortedRules) {
+      // Filter check
+      if (searchQuery) {
+        const c1 = GameDatabase.getCondition(r.conditionId);
+        const c1Name = c1 ? c1.displayName.toLowerCase() : '';
+        const c2 = GameDatabase.getCondition(r.conditionId2);
+        const c2Name = c2 ? c2.displayName.toLowerCase() : '';
+        const a = GameDatabase.getAction(r.actionId);
+        const aName = a ? a.displayName.toLowerCase() : '';
+        
+        const matches = 
+          c1Name.includes(searchQuery) ||
+          c2Name.includes(searchQuery) ||
+          aName.includes(searchQuery) ||
+          r.priority.toString().includes(searchQuery);
+          
+        if (!matches) continue;
+      }
+
       const row = this._buildRow(r);
       this.ruleList.appendChild(row);
     }

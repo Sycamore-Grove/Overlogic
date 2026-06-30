@@ -160,6 +160,90 @@ async function main() {
     });
   }
 
+  // Global Tooltip Delegator
+  const tooltip = document.getElementById('custom-tooltip');
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('[data-tooltip-type]');
+    if (!el || !tooltip) return;
+
+    const type = el.dataset.tooltipType;
+    const id = el.dataset.tooltipId || el.dataset.nodeId;
+    let content = '';
+
+    if (type === 'condition') {
+      const c = GameDatabase.getCondition(id);
+      if (c) {
+        content = `<strong style="color:var(--accent); font-size:12px;">${c.displayName}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">Condition Code: ${id}</span><br>` +
+                  `<p style="margin:6px 0 0 0; font-size:11px;">${c.description}</p>` +
+                  (c.parameterType !== 'none' ? `<span style="color:var(--accent2); font-size:10px; display:block; margin-top:4px;">Requires value type: ${c.parameterType}</span>` : '');
+      }
+    } else if (type === 'action') {
+      const a = GameDatabase.getAction(id);
+      if (a) {
+        content = `<strong style="color:var(--accent); font-size:12px;">${a.displayName}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">Action Code: ${id}</span><br>` +
+                  `<p style="margin:6px 0 6px 0; font-size:11px;">${a.description}</p>` +
+                  `<span style="color:var(--accent2); font-size:10px; display:block;">Cooldown: ${a.cooldown}s · Cost: ${a.energyCost} EN · Range: ${a.range}m</span>`;
+      }
+    } else if (type === 'map-node') {
+      // Find the node from GameState mapNodes
+      let foundNode = null;
+      for (const col of GameState.mapNodes) {
+        const n = col.find(node => node.id === id);
+        if (n) { foundNode = n; break; }
+      }
+      if (foundNode) {
+        const typeLabels = { combat: '⚔️ Combat Simulation', repair: '🔧 Nano-Repair Node', upgrade: '💎 Upgrade Vault' };
+        let detail = '';
+        if (foundNode.type === 'combat') {
+          const b = GameDatabase.getBattle(foundNode.battleIndex);
+          if (b) {
+            detail = `<span style="color:#ff3e3e; display:block; margin-top:4px;">Enemies: ${b.enemySpawns.map(s => `${s.count}x ${s.enemyId}`).join(', ')}</span>`;
+          }
+        } else if (foundNode.type === 'repair') {
+          detail = `<span style="color:#3eff9d; display:block; margin-top:4px;">Increases Max HP by +25. Instantly restores all HP.</span>`;
+        } else if (foundNode.type === 'upgrade') {
+          detail = `<span style="color:var(--accent2); display:block; margin-top:4px;">Choose a powerful passive protocol upgrade.</span>`;
+        }
+        content = `<strong style="color:var(--accent); font-size:12px;">${foundNode.label}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">${typeLabels[foundNode.type] || foundNode.type}</span>` +
+                  detail;
+      }
+    }
+
+    if (content) {
+      tooltip.innerHTML = content;
+      tooltip.classList.remove('hidden');
+      tooltip.style.display = 'block';
+
+      // Position tooltip
+      const rect = el.getBoundingClientRect();
+      const tooltipW = tooltip.offsetWidth;
+      const tooltipH = tooltip.offsetHeight;
+      
+      // Center above element
+      let left = window.scrollX + rect.left - tooltipW / 2 + rect.width / 2;
+      let top = window.scrollY + rect.top - tooltipH - 8;
+
+      // Keep inside window bounds
+      if (left < 10) left = 10;
+      if (left + tooltipW > window.innerWidth - 10) left = window.innerWidth - tooltipW - 10;
+      if (top < 10) top = window.scrollY + rect.bottom + 8; // flip to bottom if it overflows top
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    const el = e.target.closest('[data-tooltip-type]');
+    if (el && tooltip) {
+      tooltip.classList.add('hidden');
+      tooltip.style.display = 'none';
+    }
+  });
+
   // Global Hover Audio Feedback Delegator
   document.addEventListener('mouseenter', (e) => {
     const target = e.target;
