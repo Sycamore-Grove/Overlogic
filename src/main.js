@@ -160,6 +160,19 @@ async function main() {
     });
   }
 
+  // Global Hover Audio Feedback Delegator
+  document.addEventListener('mouseenter', (e) => {
+    const target = e.target;
+    if (!target || typeof target.matches !== 'function') return;
+    
+    const matchesHover = 
+      target.matches('.btn, button, select, input[type="range"], input[type="checkbox"], .map-node.unlocked, .module-list li, .combat-rule-item, .reward-card');
+      
+    if (matchesHover) {
+      AudioManager.play('hover_tick');
+    }
+  }, { capture: true, passive: true });
+
   // Start at main menu
   GameManager.goMainMenu();
 }

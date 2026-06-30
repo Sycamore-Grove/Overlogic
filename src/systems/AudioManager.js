@@ -142,7 +142,8 @@ class AudioManagerClass {
     if (!this.enabled || !this.ctx) return;
     const now = performance.now() / 1000;
     const last = this._lastPlay.get(event) || 0;
-    if (now - last < this.THROTTLE) return;
+    const throttleVal = event === 'hover_tick' ? 0.015 : this.THROTTLE;
+    if (now - last < throttleVal) return;
     this._lastPlay.set(event, now);
     
     let pan = 0;
@@ -151,6 +152,9 @@ class AudioManagerClass {
     }
     
     switch (event) {
+      case 'hover_tick':
+        this._tone(1200, 0.015, 0.025, 'sine', pan);
+        break;
       case 'button_click':
         this._tone(600, 0.05, 0.15, 'sine', pan);
         break;

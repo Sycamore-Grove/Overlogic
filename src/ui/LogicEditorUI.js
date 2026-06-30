@@ -129,6 +129,15 @@ export class LogicEditorUI {
       li.innerHTML = `<span class="mod-name">${c.displayName}</span>` +
         `<span class="mod-desc">${c.description}</span>` +
         (c.parameterType !== 'none' ? `<span class="mod-meta">param: ${c.parameterType}</span>` : '');
+      li.style.cursor = 'pointer';
+      
+      // Double-click to quick-add
+      li.addEventListener('dblclick', () => {
+        this._openAddForm();
+        this.fCond.value = id;
+        this._refreshFormParam();
+        AudioManager.play('button_click');
+      });
       this.condList.appendChild(li);
     }
     // Actions
@@ -143,6 +152,15 @@ export class LogicEditorUI {
       li.innerHTML = `<span class="mod-name">${a.displayName}</span>` +
         `<span class="mod-desc">${a.description}</span>` +
         `<span class="mod-meta">cd ${a.cooldown}s · e${a.energyCost} · r${a.range}</span>`;
+      li.style.cursor = 'pointer';
+      
+      // Double-click to quick-add
+      li.addEventListener('dblclick', () => {
+        this._openAddForm();
+        this.fAct.value = id;
+        this._toggleFormTarget();
+        AudioManager.play('button_click');
+      });
       this.actList.appendChild(li);
     }
   }
@@ -673,13 +691,32 @@ export class LogicEditorUI {
     });
     document.addEventListener('keydown', (e) => {
       if (this.el.classList.contains('hidden')) return;
+      
+      // Ctrl + Z (Undo)
       if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (GameState.undo()) AudioManager.play('button_click');
       }
+      // Ctrl + Y (Redo)
       if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         if (GameState.redo()) AudioManager.play('button_click');
+      }
+      // Ctrl + S (Save Loadout)
+      if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        const slot = this.lastSavedSlot || 1;
+        const btnSave = document.getElementById(`btn-save-${slot}`);
+        if (btnSave) btnSave.click();
+      }
+      // Enter or Space to Run Simulation (when not focused on text inputs, dropdowns, or buttons)
+      if (e.key === 'Enter' || (e.key === ' ' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'BUTTON')) {
+        // Allow default enter behavior in rule form submit
+        if (e.key === 'Enter' && this.ruleForm && !this.ruleForm.classList.contains('hidden')) {
+          return;
+        }
+        e.preventDefault();
+        if (this.btnRun) this.btnRun.click();
       }
     });
 
@@ -743,6 +780,7 @@ export class LogicEditorUI {
         btnLoad.addEventListener('click', () => {
           const res = GameState.loadLoadout(slot);
           if (res && res.ok) {
+            this.lastSavedSlot = slot; // update last used slot
             if (res.filtered) {
               AudioManager.play('defeat');
               console.warn("Some rules from the loadout slot were locked at the current teach stage and were skipped.");
@@ -756,6 +794,7 @@ export class LogicEditorUI {
       if (btnSave) {
         btnSave.addEventListener('click', () => {
           if (GameState.saveLoadout(slot)) {
+            this.lastSavedSlot = slot; // update last used slot
             AudioManager.play('button_click');
             const originalText = btnSave.textContent;
             btnSave.textContent = 'SAVED!';
