@@ -986,9 +986,8 @@ body {
 }
 
 .combat-rules-panel {
-  flex: 1;
-  min-width: 280px;
-  max-width: 320px;
+  width: 320px;
+  flex: 0 0 320px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -1065,17 +1064,20 @@ body {
 }
 
 .combat-rule-item {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   font-family: monospace;
   font-size: 11px;
-  line-height: 16px;
   height: 34px;
   box-sizing: border-box;
   color: var(--muted);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .combat-rule-item .c-cond {
@@ -1088,7 +1090,14 @@ body {
 
 .combat-rule-item .c-prio {
   color: var(--muted);
-  float: right;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.diag-status-badge {
+  float: none !important;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .combat-rule-item.executing {
@@ -1135,7 +1144,7 @@ body {
     max-width: 100%;
     height: auto;
     max-height: 250px;
-    flex-shrink: 0;
+    flex: none;
   }
 }
 
