@@ -4,32 +4,57 @@
 class AudioManagerClass {
   constructor() {
     this.ctx = null;
+    this.masterGain = null;
     this.enabled = true;
     this._lastPlay = new Map();   // event -> timestamp
     this.THROTTLE = 0.03;         // min seconds between same-event plays
+    this.volumeVal = 0.8;         // master volume (0 to 1)
+    this.muted = false;
   }
 
   // Must be called after a user gesture (browser autoplay policy).
   resume() {
     if (!this.ctx) {
-      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      try { 
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(this.muted ? 0 : this.volumeVal, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+      }
       catch (e) { this.enabled = false; return; }
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
+  setVolume(val) {
+    this.volumeVal = Math.max(0, Math.min(1, val));
+    if (this.ctx && this.masterGain) {
+      const t = this.ctx.currentTime;
+      this.masterGain.gain.setValueAtTime(this.muted ? 0 : this.volumeVal, t);
+    }
+  }
+
+  setMute(bool) {
+    this.muted = !!bool;
+    if (this.ctx && this.masterGain) {
+      const t = this.ctx.currentTime;
+      this.masterGain.gain.setValueAtTime(this.muted ? 0 : this.volumeVal, t);
+    }
+  }
+
   _route(sourceNode, gainNode, t, pan = 0) {
+    if (!this.masterGain) return;
     if (pan !== 0 && this.ctx.createStereoPanner) {
       const panner = this.ctx.createStereoPanner();
       panner.pan.setValueAtTime(pan, t);
-      sourceNode.connect(gainNode).connect(panner).connect(this.ctx.destination);
+      sourceNode.connect(gainNode).connect(panner).connect(this.masterGain);
     } else {
-      sourceNode.connect(gainNode).connect(this.ctx.destination);
+      sourceNode.connect(gainNode).connect(this.masterGain);
     }
   }
 
   _tone(freq, dur, vol, type, pan = 0) {
-    if (!this.enabled || !this.ctx) return;
+    if (!this.enabled || !this.ctx || !this.masterGain) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -44,7 +69,7 @@ class AudioManagerClass {
   }
 
   _sweep(startFreq, endFreq, dur, vol, type = 'sine', pan = 0) {
-    if (!this.enabled || !this.ctx) return;
+    if (!this.enabled || !this.ctx || !this.masterGain) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -60,7 +85,7 @@ class AudioManagerClass {
   }
 
   _noise(dur, vol, lowpassFreq = 800, pan = 0) {
-    if (!this.enabled || !this.ctx) return;
+    if (!this.enabled || !this.ctx || !this.masterGain) return;
     try {
       const bufferSize = this.ctx.sampleRate * dur;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -85,9 +110,9 @@ class AudioManagerClass {
       if (pan !== 0 && this.ctx.createStereoPanner) {
         const panner = this.ctx.createStereoPanner();
         panner.pan.setValueAtTime(pan, t);
-        filter.connect(gain).connect(panner).connect(this.ctx.destination);
+        filter.connect(gain).connect(panner).connect(this.masterGain);
       } else {
-        filter.connect(gain).connect(this.ctx.destination);
+        filter.connect(gain).connect(this.masterGain);
       }
       noiseNode.start();
     } catch (e) {

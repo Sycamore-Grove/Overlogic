@@ -1,4 +1,4 @@
-// Camera.js — top-down camera with light follow + screen shake. Pure class.
+import { GameState } from '../core/GameState.js';
 
 export class Camera {
   constructor() {
@@ -13,7 +13,11 @@ export class Camera {
     this.x += (tx - this.x) * Math.min(1, dt * 4);
     this.y += (ty - this.y) * Math.min(1, dt * 4);
   }
-  shake(time, mag) { this.shakeTime = Math.max(this.shakeTime, time); this.shakeMag = mag; }
+  shake(time, mag) {
+    if (GameState && GameState.settings && !GameState.settings.screenShake) return;
+    this.shakeTime = Math.max(this.shakeTime, time);
+    this.shakeMag = mag;
+  }
   tick(dt) { if (this.shakeTime > 0) this.shakeTime -= dt; }
   offset() {
     if (this.shakeTime <= 0) return { x: 0, y: 0 };

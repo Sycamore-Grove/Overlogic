@@ -105,6 +105,61 @@ async function main() {
     victoryUI.show();
   };
 
+  // Settings Overlay Wiring
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const btnSettingsMain = document.getElementById('btn-settings');
+  const btnSettingsEditor = document.getElementById('btn-editor-settings');
+  const btnSettingsCombat = document.getElementById('btn-combat-settings');
+  const btnSettingsClose = document.getElementById('btn-settings-close');
+  const btnSettingsSave = document.getElementById('btn-settings-save');
+
+  const settingVolume = document.getElementById('setting-volume');
+  const settingVolumeVal = document.getElementById('setting-volume-val');
+  const settingMute = document.getElementById('setting-mute');
+  const settingShake = document.getElementById('setting-shake');
+
+  function openSettings() {
+    AudioManager.resume();
+    // Load current values from GameState
+    settingVolume.value = GameState.settings.volume;
+    settingVolumeVal.textContent = `${Math.round(GameState.settings.volume * 100)}%`;
+    settingMute.checked = GameState.settings.mute;
+    settingShake.checked = GameState.settings.screenShake;
+
+    settingsOverlay.classList.remove('hidden');
+    AudioManager.play('button_click');
+  }
+
+  function closeSettings() {
+    settingsOverlay.classList.add('hidden');
+    AudioManager.play('button_click');
+  }
+
+  if (btnSettingsMain) btnSettingsMain.addEventListener('click', openSettings);
+  if (btnSettingsEditor) btnSettingsEditor.addEventListener('click', openSettings);
+  if (btnSettingsCombat) btnSettingsCombat.addEventListener('click', openSettings);
+  if (btnSettingsClose) btnSettingsClose.addEventListener('click', closeSettings);
+
+  if (settingVolume) {
+    settingVolume.addEventListener('input', () => {
+      settingVolumeVal.textContent = `${Math.round(settingVolume.value * 100)}%`;
+      // Real-time preview of volume
+      AudioManager.setVolume(settingVolume.value);
+    });
+  }
+
+  if (btnSettingsSave) {
+    btnSettingsSave.addEventListener('click', () => {
+      GameState.settings.volume = parseFloat(settingVolume.value);
+      GameState.settings.mute = settingMute.checked;
+      GameState.settings.screenShake = settingShake.checked;
+      GameState.saveSettings();
+      
+      closeSettings();
+      AudioManager.play('rule_add'); // Success arpeggio
+    });
+  }
+
   // Start at main menu
   GameManager.goMainMenu();
 }

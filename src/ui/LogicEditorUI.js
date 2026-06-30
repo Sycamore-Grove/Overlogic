@@ -757,6 +757,13 @@ export class LogicEditorUI {
         btnSave.addEventListener('click', () => {
           if (GameState.saveLoadout(slot)) {
             AudioManager.play('button_click');
+            const originalText = btnSave.textContent;
+            btnSave.textContent = 'SAVED!';
+            btnSave.classList.add('success-flash');
+            setTimeout(() => {
+              btnSave.textContent = originalText;
+              btnSave.classList.remove('success-flash');
+            }, 1000);
             this.updateLoadoutStatus();
           }
         });

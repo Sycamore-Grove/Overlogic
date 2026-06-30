@@ -35,8 +35,10 @@ class GameStateClass {
     this._redoStack = [];
     this.lastReport = {};
     this._ruleCounter = 0;
+    this.settings = { volume: 0.8, mute: false, screenShake: true };
     // simple pub/sub for UI re-render
     this._listeners = { rules: [], stats: [], progress: [] };
+    this.loadSettings();
     if (!this.loadFromStorage()) {
       this.resetRun();
     }
@@ -44,6 +46,34 @@ class GameStateClass {
 
   on(evt, fn) { this._listeners[evt].push(fn); }
   _emit(evt) { for (const fn of this._listeners[evt]) fn(); }
+
+  loadSettings() {
+    try {
+      const raw = localStorage.getItem('overlogic_settings');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this.settings.volume = parsed.volume ?? 0.8;
+        this.settings.mute = parsed.mute ?? false;
+        this.settings.screenShake = parsed.screenShake ?? true;
+      }
+      // Apply to AudioManager
+      AudioManager.volumeVal = this.settings.volume;
+      AudioManager.muted = this.settings.mute;
+    } catch (e) {
+      console.error('Failed to load settings', e);
+    }
+  }
+
+  saveSettings() {
+    try {
+      localStorage.setItem('overlogic_settings', JSON.stringify(this.settings));
+      // Apply to AudioManager
+      AudioManager.setVolume(this.settings.volume);
+      AudioManager.setMute(this.settings.mute);
+    } catch (e) {
+      console.error('Failed to save settings', e);
+    }
+  }
 
   resetRun() {
     this.currentBattleIndex = 0;

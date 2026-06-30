@@ -22,6 +22,7 @@
     <div class="menu-buttons">
       <button id="btn-start" class="btn primary">Start Simulation</button>
       <button id="btn-how" class="btn">How to Play</button>
+      <button id="btn-settings" class="btn">Settings ⚙️</button>
       <button id="btn-reset" class="btn ghost">Reset Progress</button>
       <button id="btn-exit" class="btn ghost">Exit</button>
     </div>
@@ -140,6 +141,7 @@
     <footer class="editor-footer">
       <div id="unit-stats" class="unit-stats"></div>
       <div style="display: flex; gap: 12px; align-items: center;">
+        <button id="btn-editor-settings" class="btn ghost" style="padding: 14px 18px; display: flex; align-items: center; justify-content: center; min-height: 48px;" title="Settings">⚙️</button>
         <button id="btn-sandbox" class="btn secondary big" style="border-color: #ffb938; color: #ffb938; text-shadow: 0 0 8px rgba(255, 185, 56, 0.45);">Sandbox Test ⚙️</button>
         <button id="btn-run" class="btn primary big">Run Simulation ▶</button>
       </div>
@@ -160,6 +162,7 @@
         <div id="combat-timer" class="muted">0.0s</div>
       </div>
       <div class="hud-right">
+        <button id="btn-combat-settings" class="btn small" title="Settings">⚙️</button>
         <button id="btn-pause" class="btn small">Pause</button>
         <button id="btn-step" class="btn small hidden">Step</button>
         <button id="btn-speed" class="btn small">Speed x1</button>
@@ -229,6 +232,34 @@
     </div>
     <button id="btn-victory-menu" class="btn primary big" style="margin-top: 24px;">Return to Menu</button>
   </section>
+
+  <!-- ===== Settings Overlay ===== -->
+  <div id="settings-overlay" class="overlay hidden">
+    <div class="overlay-card settings-card">
+      <h2>System Configuration</h2>
+      <div class="settings-list" style="display: flex; flex-direction: column; gap: 16px; margin: 20px 0; text-align: left; width: 100%; max-width: 320px;">
+        <div class="settings-group" style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="font-size: 12px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;">Master Volume</label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="setting-volume" min="0" max="1" step="0.05" value="0.8" style="flex: 1; cursor: pointer;">
+            <span id="setting-volume-val" style="font-family: monospace; font-size: 12px; color: var(--txt); width: 40px; text-align: right;">80%</span>
+          </div>
+        </div>
+        <div class="settings-group" style="display: flex; justify-content: space-between; align-items: center;">
+          <label style="font-size: 12px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;">Mute Audio</label>
+          <input type="checkbox" id="setting-mute" style="-webkit-appearance: none; appearance: none; width: 16px; height: 16px; border: 1px solid var(--line); background: #020408; border-radius: 3px; cursor: pointer; position: relative;">
+        </div>
+        <div class="settings-group" style="display: flex; justify-content: space-between; align-items: center;">
+          <label style="font-size: 12px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;">Enable Camera Shake</label>
+          <input type="checkbox" id="setting-shake" checked style="-webkit-appearance: none; appearance: none; width: 16px; height: 16px; border: 1px solid var(--line); background: #020408; border-radius: 3px; cursor: pointer; position: relative;">
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
+        <button id="btn-settings-save" class="btn primary">Apply</button>
+        <button id="btn-settings-close" class="btn ghost">Close</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 <div id="custom-tooltip" class="custom-tooltip hidden"></div>
