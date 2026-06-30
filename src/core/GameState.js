@@ -2,6 +2,7 @@
 // Mirrors scripts/core/GameState.gd. Singleton instance exported.
 
 import { GameDatabase } from './GameDatabase.js';
+import { AudioManager } from '../systems/AudioManager.js';
 
 // Base stats from DESIGN.md §7.1 + extended upgrades
 function baseStats() {

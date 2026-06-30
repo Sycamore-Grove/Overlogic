@@ -291,7 +291,7 @@ function drawRobot(g, robot, scale, _now) {
     g.translate(robot.x * scale, robot.y * scale);
     
     // Find turret direction
-    let turretAngle = moveAngle;
+    let turretAngle = robot.chassisAngle || 0;
     const e = robot.aimTarget && !robot.aimTarget.dead ? robot.aimTarget : (robot.ctx ? robot.ctx.nearestEnemyTo({ x: robot.x, y: robot.y }) : null);
     if (e) {
       turretAngle = Math.atan2(e.y - robot.y, e.x - robot.x);
