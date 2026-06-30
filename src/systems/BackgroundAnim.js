@@ -24,8 +24,8 @@ export class BackgroundAnim {
   }
 
   resize() {
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
+    this.width = window.innerWidth || 1024;
+    this.height = window.innerHeight || 768;
     this.canvas.width = this.width * window.devicePixelRatio;
     this.canvas.height = this.height * window.devicePixelRatio;
     this.g.scale(window.devicePixelRatio, window.devicePixelRatio);
@@ -52,7 +52,7 @@ export class BackgroundAnim {
       vy: dir.y * this.speed,
       history: [],
       maxHistory: 12,
-      color: Math.random() > 0.4 ? 'rgba(0, 210, 255, 0.15)' : 'rgba(62, 255, 157, 0.12)'
+      color: Math.random() > 0.4 ? 'rgba(0, 210, 255, 0.35)' : 'rgba(62, 255, 157, 0.28)'
     };
   }
 
@@ -136,7 +136,7 @@ export class BackgroundAnim {
       g.stroke();
 
       // Glowing active node dot
-      g.fillStyle = p.color.replace('0.15', '0.6').replace('0.12', '0.6');
+      g.fillStyle = p.color.replace('0.35', '0.75').replace('0.28', '0.75');
       g.beginPath();
       g.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
       g.fill();
@@ -150,7 +150,7 @@ export class BackgroundAnim {
         const p2 = this.particles[j];
         const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
         if (dist < 130) {
-          const alpha = (1 - dist / 130) * 0.08;
+          const alpha = (1 - dist / 130) * 0.16;
           g.strokeStyle = `rgba(0, 210, 255, ${alpha})`;
           g.beginPath();
           g.moveTo(p1.x, p1.y);
