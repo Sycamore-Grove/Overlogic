@@ -142,18 +142,18 @@ class GameStateClass {
   // Called when a battle is won. reward_id may be '' for final boss skip.
   // persistentHp: carry the robot's ending HP into the next battle (no full heal).
   onBattleWon(rewardId, endHp = null) {
-    if (rewardId !== '') {
-      const reward = GameDatabase.getReward(rewardId);
-      if (reward) this._applyReward(reward);
-      else console.error('GameState: unknown reward', rewardId);
-    }
-
-    // Persist HP — robots start next battle with whatever HP they finished with.
-    // Clamp to current max_hp (in case upgrades increased it).
+    // Persist HP before applying rewards so Max HP upgrades can also grant
+    // the newly-installed hull capacity as usable HP for the next battle.
     if (endHp !== null && typeof endHp === 'number' && endHp > 0) {
       this.persistentHp = Math.min(endHp, this.stats.max_hp);
     } else {
       this.persistentHp = null; // full heal fallback
+    }
+
+    if (rewardId !== '') {
+      const reward = GameDatabase.getReward(rewardId);
+      if (reward) this._applyReward(reward);
+      else console.error('GameState: unknown reward', rewardId);
     }
 
     const colNodes = this.mapNodes[this.currentMapColumn];
@@ -212,7 +212,12 @@ class GameStateClass {
 
   _applyPassive(target, value) {
     switch (target) {
-      case 'max_hp':        this.stats.max_hp += value; break;
+      case 'max_hp':
+        this.stats.max_hp += value;
+        if (this.persistentHp !== null) {
+          this.persistentHp = Math.min(this.stats.max_hp, this.persistentHp + value);
+        }
+        break;
       case 'max_energy':    this.stats.max_energy += value; break;
       case 'move_speed':    this.stats.move_speed += value; break;
       case 'energy_regen':  this.stats.energy_regen *= value; break;
@@ -430,6 +435,7 @@ class GameStateClass {
     if (node.type === 'repair') {
       node.completed = true;
       this.stats.max_hp += 25;
+      this.persistentHp = this.stats.max_hp;
       this.currentMapColumn += 1;
       const nCol = this.mapNodes[this.currentMapColumn];
       this.selectedNodeId = nCol ? nCol[0].id : null;

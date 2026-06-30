@@ -3,7 +3,6 @@
 // Mirrors scripts/core/GameManager.gd.
 
 import { GameState } from './GameState.js';
-import { GameDatabase } from './GameDatabase.js';
 
 const State = {
   MainMenu: 'main', LogicEditing: 'editor', Combat: 'combat',
@@ -35,8 +34,7 @@ class GameManagerClass {
     this.lastBattleWon = won;
     if (won) {
       // Final boss cleared?
-      const activeBattle = GameState.getActiveBattle();
-      const isLast = activeBattle && activeBattle.battleIndex >= GameDatabase.getBattleCount() - 1;
+      const isLast = GameState.currentMapColumn >= GameState.mapNodes.length - 1;
       if (isLast) {
         const endHp = GameState.lastReport._endHp || null;
         GameState.onBattleWon('', endHp);

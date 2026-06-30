@@ -45,7 +45,8 @@ export class PostBattleReportUI {
   show() {
     const report = GameState.lastReport || {};
     const availableActions = GameState.availableActionIds();
-    const built = buildReport(report, availableActions);
+    const availableConditions = GameState.availableConditionIds();
+    const built = buildReport(report, availableActions, availableConditions);
     
     this.repDamage.innerHTML = built.damage_lines.map(s => `<li>${s}</li>`).join('');
     
@@ -96,7 +97,6 @@ export class PostBattleReportUI {
         addBtn.style.whiteSpace = 'nowrap';
         
         addBtn.addEventListener('click', () => {
-          GameState.pushUndoState();
           GameState.addRule(
             sug.rule.conditionId,
             sug.rule.conditionValue,

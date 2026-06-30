@@ -46,13 +46,13 @@ export class VictoryUI {
           'overdrive_cd','overdrive_dur'];
         return !baseKeys.includes(k) && v !== 0 && typeof v === 'number';
       }).map(([k]) => k);
-    const finalHp = report._endHp || '—';
-    const dmgDealt = report.totalDmgDealt || 0;
+    const finalHp = report._endHp ?? null;
+    const dmgDealt = report.total_damage_dealt ?? report.totalDmgDealt ?? 0;
     const battlesWon = GameState.currentMapColumn;
 
     this.statsEl.innerHTML = `
       <div class="victory-stat"><span class="stat-label">Battles Won</span><span class="stat-value">${battlesWon}</span></div>
-      <div class="victory-stat"><span class="stat-label">Final HP</span><span class="stat-value">${Math.round(finalHp)}</span></div>
+      <div class="victory-stat"><span class="stat-label">Final HP</span><span class="stat-value">${finalHp === null ? '—' : Math.round(finalHp)}</span></div>
       <div class="victory-stat"><span class="stat-label">Total Damage</span><span class="stat-value">${Math.round(dmgDealt)}</span></div>
       <div class="victory-stat"><span class="stat-label">Active Rules</span><span class="stat-value">${ruleCount}</span></div>
       <div class="victory-stat"><span class="stat-label">Upgrades Acquired</span><span class="stat-value">${GameState.unlockedActionIds.length + GameState.unlockedConditionIds.length + passives.length}</span></div>

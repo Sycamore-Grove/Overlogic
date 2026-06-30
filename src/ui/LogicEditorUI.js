@@ -72,8 +72,7 @@ export class LogicEditorUI {
     const battle = GameState.getActiveBattle();
     if (battle) {
       this.edBattleName.textContent = battle.displayName;
-      const parts = battle.enemySpawns.map(s => `${s.count}× ${s.enemyId}`).join(', ');
-      this.edBattlePreview.textContent = `// ${parts}`;
+      this.edBattlePreview.textContent = `// ${this._formatBattlePreview(battle)}`;
     } else {
       const colNodes = GameState.mapNodes[GameState.currentMapColumn];
       const activeNode = colNodes ? colNodes.find(n => n.id === GameState.selectedNodeId) : null;
@@ -118,6 +117,26 @@ export class LogicEditorUI {
       });
       this.mapNodesContainer.appendChild(colDiv);
     });
+  }
+
+  _formatBattlePreview(battle) {
+    const byEnemy = new Map();
+    let maxWave = 0;
+    for (const spawn of battle.enemySpawns || []) {
+      maxWave = Math.max(maxWave, spawn.wave || 1);
+      byEnemy.set(spawn.enemyId, (byEnemy.get(spawn.enemyId) || 0) + spawn.count);
+    }
+    const enemies = [...byEnemy.entries()].map(([enemyId, count]) => {
+      const data = GameDatabase.getEnemy(enemyId);
+      return `${count}x ${data ? data.displayName : enemyId}`;
+    });
+    const tags = [];
+    if (maxWave > 1) tags.push(`${maxWave} waves`);
+    if (['battle_4', 'battle_6'].includes(battle.id)) tags.push('2 hazards');
+    if (['battle_5', 'battle_7'].includes(battle.id)) tags.push('3 hazards');
+    if (['battle_8', 'battle_9', 'battle_10'].includes(battle.id)) tags.push('4 hazards');
+    if ((battle.enemySpawns || []).some(s => s.enemyId.includes('warden'))) tags.push('boss');
+    return [...enemies, ...tags].join(' · ');
   }
 
   renderModules() {

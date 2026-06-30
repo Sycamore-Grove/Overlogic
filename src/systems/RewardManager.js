@@ -5,7 +5,7 @@ import { GameDatabase } from '../core/GameDatabase.js';
 import { GameState } from '../core/GameState.js';
 
 export function buildRewardOptions(battle) {
-  const pool = battle.rewardPool || [];
+  const pool = battle?.rewardPool || [];
   const available = [];
   for (const rid of pool) {
     const r = GameDatabase.getReward(rid);
@@ -30,6 +30,17 @@ export function buildRewardOptions(battle) {
     [available[i], available[j]] = [available[j], available[i]];
   }
   return available.slice(0, Math.min(3, available.length));
+}
+
+export function buildUpgradeOptions() {
+  const passives = GameDatabase.allRewards()
+    .filter(r => r.rewardType === 'passive')
+    .map(r => r.id);
+  for (let i = passives.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [passives[i], passives[j]] = [passives[j], passives[i]];
+  }
+  return passives.slice(0, Math.min(3, passives.length));
 }
 
 // Reward display description helper.

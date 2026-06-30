@@ -61,6 +61,9 @@ export class EnemyBase {
     const mitigated = amount - finalDmg;
     const text = mitigated > 0 ? `-${Math.round(finalDmg)} (Mitigated)` : `-${Math.round(finalDmg)}`;
     spawnText(this.ctx, this.x, this.y - this.bodyRadius, text, dmgColor, 11);
+    if (this.ctx && this.ctx.tracker) {
+      this.ctx.tracker.recordDamageDealt(finalDmg, kind);
+    }
 
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;

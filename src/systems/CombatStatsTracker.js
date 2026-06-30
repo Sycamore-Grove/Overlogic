@@ -4,6 +4,8 @@
 export class CombatStatsTracker {
   constructor() {
     this.damageBySource = new Map();   // sourceKind -> float
+    this.damageDealtByKind = new Map();
+    this.totalDamageDealt = 0;
     this.actionUsage = new Map();      // actionId -> int
     this.actionLastUsedTime = new Map();
     this.interruptSuccesses = 0;
@@ -20,6 +22,10 @@ export class CombatStatsTracker {
 
   recordDamageTaken(amount, source) {
     this.damageBySource.set(source, (this.damageBySource.get(source) || 0) + amount);
+  }
+  recordDamageDealt(amount, kind) {
+    this.totalDamageDealt += amount;
+    this.damageDealtByKind.set(kind, (this.damageDealtByKind.get(kind) || 0) + amount);
   }
   recordAction(actionId) {
     this.actionUsage.set(actionId, (this.actionUsage.get(actionId) || 0) + 1);
@@ -39,6 +45,8 @@ export class CombatStatsTracker {
   toReport() {
     return {
       damage_by_source: Object.fromEntries(this.damageBySource),
+      damage_dealt_by_kind: Object.fromEntries(this.damageDealtByKind),
+      total_damage_dealt: this.totalDamageDealt,
       action_usage: Object.fromEntries(this.actionUsage),
       action_last_used_time: Object.fromEntries(this.actionLastUsedTime),
       interrupt_successes: this.interruptSuccesses,

@@ -39,6 +39,7 @@ body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
   user-select: none;
+  touch-action: manipulation;
 }
 
 .rule-row, .rule-header, .combat-rule-item, .combat-console-log, .unit-stats, .custom-tooltip {
@@ -120,7 +121,7 @@ body {
 
 .logo {
   font-size: clamp(48px, 8vw, 96px);
-  letter-spacing: 20px;
+  letter-spacing: clamp(6px, 1.45vw, 18px);
   font-weight: 900;
   background: linear-gradient(90deg, #ffffff 0%, var(--accent) 50%, var(--accent2) 100%);
   -webkit-background-clip: text;
@@ -129,6 +130,8 @@ body {
   filter: drop-shadow(0 0 20px rgba(0, 210, 255, 0.3));
   animation: pulseLogo 4s ease-in-out infinite;
   text-transform: uppercase;
+  max-width: min(100vw - 32px, 1100px);
+  line-height: 0.95;
 }
 
 @keyframes pulseLogo {
@@ -150,7 +153,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 320px;
+  width: min(340px, calc(100vw - 48px));
   z-index: 5;
 }
 
@@ -195,6 +198,15 @@ body {
 
 .btn:active {
   transform: translateY(0);
+}
+
+.btn:focus-visible,
+.reward-card:focus-visible,
+.map-node.unlocked:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(255, 185, 56, 0.9);
+  outline-offset: 2px;
 }
 
 .btn.primary {
@@ -818,7 +830,7 @@ input[type="number"] {
 
 .combat-top {
   width: 100%;
-  height: 80px;
+  min-height: 80px;
   flex-shrink: 0;
   display: flex;
   justify-content: space-between;
@@ -835,6 +847,8 @@ input[type="number"] {
   display: flex;
   gap: 20px;
   align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .bar {
@@ -921,6 +935,9 @@ input[type="number"] {
 
 .hud-center {
   text-align: center;
+  min-width: 260px;
+  flex: 1 1 340px;
+  overflow: hidden;
 }
 
 .current-logic {
@@ -936,8 +953,9 @@ input[type="number"] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 480px;
-  display: inline-block;
+  max-width: min(100%, 560px);
+  display: block;
+  margin: 0 auto;
 }
 
 .current-logic.flash {
@@ -977,6 +995,9 @@ input[type="number"] {
 .hud-right {
   display: flex;
   gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .boss-bar {
@@ -1020,8 +1041,12 @@ input[type="number"] {
   background: #020306;
   box-shadow: 0 0 45px rgba(0, 210, 255, 0.2);
   border-radius: 4px;
+  width: min(100%, calc(100vh - 114px));
+  height: auto;
   max-width: 100%;
-  max-height: 100%;
+  max-height: calc(100vh - 114px);
+  justify-self: center;
+  align-self: center;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   z-index: 8;
@@ -1031,12 +1056,14 @@ input[type="number"] {
 .combat-main-layout {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: row;
+  height: 100%;
+  max-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
   align-items: stretch;
   gap: 16px;
   width: 100%;
-  max-width: 1060px;
+  max-width: 1160px;
   margin: 0 auto;
   z-index: 8;
   overflow: hidden;
@@ -1044,7 +1071,7 @@ input[type="number"] {
 
 .combat-rules-panel {
   width: 320px;
-  flex: 0 0 320px;
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -1053,6 +1080,7 @@ input[type="number"] {
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: calc(100vh - 114px);
   min-height: 0;
   z-index: 8;
 }
@@ -1129,12 +1157,16 @@ input[type="number"] {
   border-radius: 4px;
   font-family: monospace;
   font-size: 11px;
-  height: 34px;
+  min-height: 34px;
+  height: auto;
   box-sizing: border-box;
   color: var(--muted);
   transition: all 0.2s ease;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
+  line-height: 1.35;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .combat-rule-item .c-cond {
@@ -1192,7 +1224,7 @@ input[type="number"] {
 
 @media (max-width: 1024px) {
   .combat-main-layout {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: center;
     overflow-y: auto;
   }
@@ -1724,4 +1756,351 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 20px rgba(62, 255, 157, 0.4) !important;
 }
 
+/* ===== Responsive polish pass ===== */
+@media (max-width: 760px) {
+  html, body {
+    overflow: hidden;
+  }
 
+  #app {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .screen {
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+  }
+
+  #screen-main {
+    justify-content: center;
+  }
+
+  .title-block {
+    margin-bottom: 28px;
+  }
+
+  .logo {
+    font-size: clamp(42px, 14vw, 58px);
+    letter-spacing: clamp(3px, 1.6vw, 7px);
+    white-space: nowrap;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 2px;
+    line-height: 1.5;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .overlay {
+    padding: 16px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .overlay-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px 18px;
+    margin: auto 0;
+  }
+
+  #screen-editor {
+    padding: 16px;
+    gap: 12px;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .editor-header {
+    padding: 16px !important;
+  }
+
+  .editor-header > div:first-child {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .battle-info {
+    min-width: 0;
+    flex: 1 1 210px;
+  }
+
+  .battle-info .value,
+  .battle-info .muted {
+    display: block;
+    margin-left: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .teach-info {
+    align-items: flex-end;
+  }
+
+  .map-panel {
+    overflow: hidden;
+  }
+
+  .map-nodes {
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x proximity;
+  }
+
+  .map-col {
+    min-width: 116px;
+    scroll-snap-align: start;
+  }
+
+  .map-node {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+  }
+
+  .panel {
+    padding: 16px;
+    min-height: 220px;
+    max-height: 360px;
+  }
+
+  .editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+
+  .panel-rules {
+    min-height: 280px;
+  }
+
+  .panel-rules h3 {
+    gap: 10px !important;
+  }
+
+  #rules-search {
+    order: 10;
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .slots-bar {
+    align-items: stretch !important;
+  }
+
+  .slot-item {
+    width: 100%;
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    justify-content: space-between;
+  }
+
+  .rule-header {
+    display: none;
+  }
+
+  .rule-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .rule-row > * {
+    min-width: 0;
+  }
+
+  .rule-row > :nth-child(1) {
+    flex: 0 0 24px;
+  }
+
+  .rule-row > :nth-child(2) {
+    flex: 0 0 58px;
+  }
+
+  .rule-row > :nth-child(3),
+  .rule-row > :nth-child(5),
+  .rule-row > :nth-child(6) {
+    flex: 1 1 100%;
+  }
+
+  .rule-row > :nth-child(4),
+  .rule-row > :nth-child(7),
+  .rule-row > :nth-child(8) {
+    flex: 1 1 96px;
+  }
+
+  .cond-wrap,
+  .cond2-wrap {
+    flex-wrap: wrap;
+  }
+
+  .rule-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .rule-form select,
+  .rule-form input,
+  .rule-form .btn {
+    width: 100%;
+  }
+
+  .editor-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .unit-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .editor-footer > div:last-child {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px !important;
+  }
+
+  #btn-editor-settings {
+    grid-row: span 2;
+    width: 48px;
+    padding: 0 !important;
+  }
+
+  #btn-sandbox,
+  #btn-run {
+    width: 100%;
+    min-width: 0;
+    padding: 16px 12px !important;
+    font-size: 13px;
+  }
+
+  #screen-combat {
+    padding: 10px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .combat-top {
+    height: auto;
+    min-height: 0;
+    padding: 12px;
+    align-items: stretch;
+  }
+
+  .hud-left {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .bar {
+    width: 100%;
+  }
+
+  .bar > span {
+    width: 44px;
+  }
+
+  .bar-track {
+    flex: 1;
+    width: auto;
+  }
+
+  .hud-center {
+    order: -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .current-logic {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .hud-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hud-right .btn {
+    flex: 1 1 auto;
+    padding: 9px 8px;
+  }
+
+  .combat-main-layout {
+    width: 100%;
+    overflow: visible;
+    gap: 10px;
+  }
+
+  #arena {
+    width: 100%;
+    height: auto;
+  }
+
+  .combat-rules-panel {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .phase-toast {
+    width: calc(100% - 32px);
+    white-space: normal;
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 3px;
+  }
+
+  .reward-grid,
+  .report-grid,
+  .report-actions,
+  .victory-stats-grid {
+    width: 100%;
+  }
+
+  .reward-card {
+    width: 100%;
+  }
+
+  .report-actions {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  .combat-top {
+    height: auto;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .hud-left {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .hud-center {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .hud-right {
+    width: 100%;
+    justify-content: center;
+  }
+}

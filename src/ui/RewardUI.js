@@ -5,7 +5,7 @@
 import { GameState } from '../core/GameState.js';
 import { GameDatabase } from '../core/GameDatabase.js';
 import { GameManager } from '../core/GameManager.js';
-import { buildRewardOptions, rewardDescription } from '../systems/RewardManager.js';
+import { buildRewardOptions, buildUpgradeOptions, rewardDescription } from '../systems/RewardManager.js';
 import { AudioManager } from '../systems/AudioManager.js';
 
 const TYPE_ICONS = {
@@ -22,8 +22,12 @@ export class RewardUI {
   }
 
   show() {
-    const justWonBattle = GameDatabase.getBattle(GameState.currentBattleIndex);
-    this._currentOptions = buildRewardOptions(justWonBattle);
+    if (GameManager.isUpgradeReward) {
+      this._currentOptions = buildUpgradeOptions();
+    } else {
+      const justWonBattle = GameState.getActiveBattle() || GameDatabase.getBattle(GameState.currentBattleIndex);
+      this._currentOptions = buildRewardOptions(justWonBattle);
+    }
     this._render();
   }
 
@@ -62,6 +66,9 @@ export class RewardUI {
       if (!r) continue;
       const card = document.createElement('div');
       card.className = 'reward-card';
+      card.tabIndex = 0;
+      card.role = 'button';
+      card.setAttribute('aria-label', `Select ${r.displayName}`);
       const icon = TYPE_ICONS[r.rewardType] || '✦';
       const typeLabel = r.rewardType.replace('_', ' ').toUpperCase();
       card.innerHTML =
@@ -69,9 +76,15 @@ export class RewardUI {
         `<span class="r-name">${r.displayName}</span>` +
         `<span class="r-desc">${rewardDescription(r)}</span>` +
         `<span class="r-pick-hint">Click to Select</span>`;
-      card.addEventListener('click', () => {
+      const choose = () => {
         AudioManager.play('rule_add');
         GameManager.onRewardChosen(rid);
+      };
+      card.addEventListener('click', choose);
+      card.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        choose();
       });
       this.optionsEl.appendChild(card);
     }
