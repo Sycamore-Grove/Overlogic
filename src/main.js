@@ -12,9 +12,11 @@ import { PostBattleReportUI } from './ui/PostBattleReportUI.js';
 import { VictoryUI } from './ui/VictoryUI.js';
 import { AudioManager } from './systems/AudioManager.js';
 import { BackgroundAnim } from './systems/BackgroundAnim.js';
+import { escapeHtml } from './ui/safeHtml.js';
 
 async function main() {
   await GameDatabase.loadAll();
+  GameState.normalizeAfterDatabaseLoad();
 
   // Initialize and run the cyber background animation
   const bgCanvas = document.getElementById('bg-canvas');
@@ -173,18 +175,18 @@ async function main() {
     if (type === 'condition') {
       const c = GameDatabase.getCondition(id);
       if (c) {
-        content = `<strong style="color:var(--accent); font-size:12px;">${c.displayName}</strong><br>` +
-                  `<span style="color:var(--muted); font-size:10px;">Condition Code: ${id}</span><br>` +
-                  `<p style="margin:6px 0 0 0; font-size:11px;">${c.description}</p>` +
-                  (c.parameterType !== 'none' ? `<span style="color:var(--accent2); font-size:10px; display:block; margin-top:4px;">Requires value type: ${c.parameterType}</span>` : '');
+        content = `<strong style="color:var(--accent); font-size:12px;">${escapeHtml(c.displayName)}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">Condition Code: ${escapeHtml(id)}</span><br>` +
+                  `<p style="margin:6px 0 0 0; font-size:11px;">${escapeHtml(c.description)}</p>` +
+                  (c.parameterType !== 'none' ? `<span style="color:var(--accent2); font-size:10px; display:block; margin-top:4px;">Requires value type: ${escapeHtml(c.parameterType)}</span>` : '');
       }
     } else if (type === 'action') {
       const a = GameDatabase.getAction(id);
       if (a) {
-        content = `<strong style="color:var(--accent); font-size:12px;">${a.displayName}</strong><br>` +
-                  `<span style="color:var(--muted); font-size:10px;">Action Code: ${id}</span><br>` +
-                  `<p style="margin:6px 0 6px 0; font-size:11px;">${a.description}</p>` +
-                  `<span style="color:var(--accent2); font-size:10px; display:block;">Cooldown: ${a.cooldown}s · Cost: ${a.energyCost} EN · Range: ${a.range}m</span>`;
+        content = `<strong style="color:var(--accent); font-size:12px;">${escapeHtml(a.displayName)}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">Action Code: ${escapeHtml(id)}</span><br>` +
+                  `<p style="margin:6px 0 6px 0; font-size:11px;">${escapeHtml(a.description)}</p>` +
+                  `<span style="color:var(--accent2); font-size:10px; display:block;">Cooldown: ${escapeHtml(a.cooldown)}s · Cost: ${escapeHtml(a.energyCost)} EN · Range: ${escapeHtml(a.range)}m</span>`;
       }
     } else if (type === 'map-node') {
       // Find the node from GameState mapNodes
@@ -199,15 +201,15 @@ async function main() {
         if (foundNode.type === 'combat') {
           const b = GameDatabase.getBattle(foundNode.battleIndex);
           if (b) {
-            detail = `<span style="color:#ff3e3e; display:block; margin-top:4px;">Enemies: ${b.enemySpawns.map(s => `${s.count}x ${s.enemyId}`).join(', ')}</span>`;
+            detail = `<span style="color:#ff3e3e; display:block; margin-top:4px;">Enemies: ${escapeHtml(b.enemySpawns.map(s => `${s.count}x ${s.enemyId}`).join(', '))}</span>`;
           }
         } else if (foundNode.type === 'repair') {
           detail = `<span style="color:#3eff9d; display:block; margin-top:4px;">Increases Max HP by +25. Instantly restores all HP.</span>`;
         } else if (foundNode.type === 'upgrade') {
           detail = `<span style="color:var(--accent2); display:block; margin-top:4px;">Choose a powerful passive protocol upgrade.</span>`;
         }
-        content = `<strong style="color:var(--accent); font-size:12px;">${foundNode.label}</strong><br>` +
-                  `<span style="color:var(--muted); font-size:10px;">${typeLabels[foundNode.type] || foundNode.type}</span>` +
+        content = `<strong style="color:var(--accent); font-size:12px;">${escapeHtml(foundNode.label)}</strong><br>` +
+                  `<span style="color:var(--muted); font-size:10px;">${escapeHtml(typeLabels[foundNode.type] || foundNode.type)}</span>` +
                   detail;
       }
     }
@@ -263,5 +265,5 @@ async function main() {
 
 main().catch(err => {
   console.error('Overlogic boot failed:', err);
-  document.body.innerHTML = `<div style="padding:24px;color:#f55;font-family:monospace">Boot failed: ${err}<br>Run via a local web server (e.g. <code>python -m http.server</code>) — fetch() needs http, not file://.</div>`;
+  document.body.innerHTML = `<div style="padding:24px;color:#f55;font-family:monospace">Boot failed: ${escapeHtml(err?.message || err)}<br>Run via a local web server (e.g. <code>python -m http.server</code>) — fetch() needs http, not file://.</div>`;
 });

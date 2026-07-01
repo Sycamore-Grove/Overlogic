@@ -114,6 +114,7 @@ export class CombatArena {
     this.ctx.executor = this.executor;
     this.brain = new LogicBrain();
     this.brain.setup(this.robot, this.ctx, this.executor, this.ctx.tracker);
+    this.ctx.tracker.setRuleSnapshot(GameState.rules);
     this.brain.onLabel = (label, rule, diagnostics) => {
       this.hud.setCurrentLogic(label, rule, this.ctx.overlogic.active);
       if (diagnostics) {

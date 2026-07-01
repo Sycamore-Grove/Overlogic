@@ -5,6 +5,7 @@ import { GameManager } from '../core/GameManager.js';
 import { GameState } from '../core/GameState.js';
 import { AudioManager } from '../systems/AudioManager.js';
 import { drawStatsChart } from './StatsChart.js';
+import { escapeHtml } from './safeHtml.js';
 
 export class VictoryUI {
   constructor() {
@@ -70,7 +71,7 @@ export class VictoryUI {
       const cond = r.conditionId || '?';
       const act = r.actionId || '?';
       const op = r.operator && r.conditionId2 ? ` ${r.operator.toUpperCase()} ${r.conditionId2}` : '';
-      return `<li><span class="rule-prio-badge">${r.priority}</span> IF <span class="rule-cond">${cond}${op}</span> → <span class="rule-act">${act}</span></li>`;
+      return `<li><span class="rule-prio-badge">${escapeHtml(r.priority)}</span> IF <span class="rule-cond">${escapeHtml(cond + op)}</span> → <span class="rule-act">${escapeHtml(act)}</span></li>`;
     }).join('');
     this.rulesEl.innerHTML = `<ul class="victory-rules-list">${items}</ul>`;
   }

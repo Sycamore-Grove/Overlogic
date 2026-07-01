@@ -7,6 +7,9 @@ export class CombatStatsTracker {
     this.damageDealtByKind = new Map();
     this.totalDamageDealt = 0;
     this.actionUsage = new Map();      // actionId -> int
+    this.ruleUsage = new Map();
+    this.ruleDiagnostics = new Map();
+    this.activeRuleIds = [];
     this.actionLastUsedTime = new Map();
     this.interruptSuccesses = 0;
     this.castingEventsSeen = 0;
@@ -27,9 +30,21 @@ export class CombatStatsTracker {
     this.totalDamageDealt += amount;
     this.damageDealtByKind.set(kind, (this.damageDealtByKind.get(kind) || 0) + amount);
   }
-  recordAction(actionId) {
+  setRuleSnapshot(rules) {
+    this.activeRuleIds = (rules || []).filter(rule => rule.enabled !== false).map(rule => rule.id);
+  }
+  recordAction(actionId, ruleId = null) {
     this.actionUsage.set(actionId, (this.actionUsage.get(actionId) || 0) + 1);
     this.actionLastUsedTime.set(actionId, this.battleTime);
+    if (ruleId) this.ruleUsage.set(ruleId, (this.ruleUsage.get(ruleId) || 0) + 1);
+  }
+  recordDiagnostics(diagnostics) {
+    if (!diagnostics) return;
+    for (const [ruleId, state] of Object.entries(diagnostics)) {
+      if (!this.ruleDiagnostics.has(ruleId)) this.ruleDiagnostics.set(ruleId, {});
+      const counts = this.ruleDiagnostics.get(ruleId);
+      counts[state] = (counts[state] || 0) + 1;
+    }
   }
   recordEnergyOverflow(dt) { this.energyOverflowTime += dt; }
   recordInterruptSuccess() { this.interruptSuccesses += 1; this.castingEventsInterrupted += 1; }
@@ -48,6 +63,9 @@ export class CombatStatsTracker {
       damage_dealt_by_kind: Object.fromEntries(this.damageDealtByKind),
       total_damage_dealt: this.totalDamageDealt,
       action_usage: Object.fromEntries(this.actionUsage),
+      rule_usage: Object.fromEntries(this.ruleUsage),
+      rule_diagnostics: Object.fromEntries(this.ruleDiagnostics),
+      active_rule_ids: this.activeRuleIds,
       action_last_used_time: Object.fromEntries(this.actionLastUsedTime),
       interrupt_successes: this.interruptSuccesses,
       interrupt_misses: Math.max(0, this.castingEventsSeen - this.castingEventsInterrupted),

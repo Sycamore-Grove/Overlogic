@@ -6,6 +6,7 @@ import { AudioManager } from '../systems/AudioManager.js';
 import { GameState } from '../core/GameState.js';
 import { GameDatabase } from '../core/GameDatabase.js';
 import { formatCond } from '../logic/LogicRule.js';
+import { escapeHtml } from './safeHtml.js';
 
 export class BattleHUD {
   constructor(arena) {
@@ -173,7 +174,7 @@ export class BattleHUD {
       const aName = a ? a.displayName : r.actionId;
       const targetStr = r.targetPriority && r.targetPriority !== 'nearest' ? ` (${r.targetPriority})` : '';
 
-      li.innerHTML = `IF <span class="c-cond">${condStr}</span> THEN <span class="c-act">${aName}${targetStr}</span> <span class="c-prio">[Prio ${r.priority|0}]</span>`;
+      li.innerHTML = `IF <span class="c-cond">${escapeHtml(condStr)}</span> THEN <span class="c-act">${escapeHtml(aName + targetStr)}</span> <span class="c-prio">[Prio ${escapeHtml(r.priority|0)}]</span>`;
       rulesList.appendChild(li);
     }
   }

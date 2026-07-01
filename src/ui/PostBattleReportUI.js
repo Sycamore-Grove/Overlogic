@@ -5,6 +5,7 @@ import { GameManager } from '../core/GameManager.js';
 import { buildReport } from '../systems/PostBattleReportBuilder.js';
 import { AudioManager } from '../systems/AudioManager.js';
 import { drawStatsChart } from './StatsChart.js';
+import { escapeHtml } from './safeHtml.js';
 
 export class PostBattleReportUI {
   constructor() {
@@ -48,12 +49,12 @@ export class PostBattleReportUI {
     const availableConditions = GameState.availableConditionIds();
     const built = buildReport(report, availableActions, availableConditions);
     
-    this.repDamage.innerHTML = built.damage_lines.map(s => `<li>${s}</li>`).join('');
+    this.repDamage.innerHTML = built.damage_lines.map(s => `<li>${escapeHtml(s)}</li>`).join('');
     
     // Logic report enriched with action usage stats
     const actionUsage = report.action_usage || {};
     const allActions = GameState.availableActionIds();
-    let logicHtml = built.logic_lines.map(s => `<li>${s}</li>`).join('');
+    let logicHtml = built.logic_lines.map(s => `<li>${escapeHtml(s)}</li>`).join('');
 
     // Add action frequency section
     const usedActions = allActions.filter(a => actionUsage[a] > 0)
@@ -65,11 +66,11 @@ export class PostBattleReportUI {
       for (const a of usedActions) {
         const count = actionUsage[a] || 0;
         const bar = '█'.repeat(Math.min(count, 20)) + '░'.repeat(Math.max(0, 20 - count));
-        logicHtml += `<li style="font-family: monospace; font-size: 10px;"><span style="color: #4be1ff; display: inline-block; width: 130px;">${a}</span> ${count}× <span style="color: #1a4a55;">${bar}</span></li>`;
+        logicHtml += `<li style="font-family: monospace; font-size: 10px;"><span style="color: #4be1ff; display: inline-block; width: 130px;">${escapeHtml(a)}</span> ${escapeHtml(count)}× <span style="color: #1a4a55;">${bar}</span></li>`;
       }
     }
     if (unusedActions.length > 0) {
-      logicHtml += `<li style="color: #ff6b6b; font-size: 10px; margin-top: 6px;">⚠ Never triggered: ${unusedActions.join(', ')}</li>`;
+      logicHtml += `<li style="color: #ff6b6b; font-size: 10px; margin-top: 6px;">⚠ Never triggered: ${escapeHtml(unusedActions.join(', '))}</li>`;
     }
     this.repLogic.innerHTML = logicHtml;
     

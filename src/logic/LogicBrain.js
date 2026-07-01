@@ -101,6 +101,7 @@ export class LogicBrain {
     if (valid.length === 0) {
       this.robot.aimTarget = null;
       this.executor.executeDefault();
+      if (this.tracker) this.tracker.recordDiagnostics(diagnostics);
       this._emit(null, 'Idle: default behavior', diagnostics);
       return;
     }
@@ -118,6 +119,7 @@ export class LogicBrain {
     }
 
     const ok = this.executor.execute(chosen.actionId, chosen);
+    if (this.tracker) this.tracker.recordDiagnostics(diagnostics);
     if (ok) {
       this._trackAndOverlogic(chosen);
       this._emit(chosen, formatLabel(chosen, GameDatabase), diagnostics);
@@ -133,7 +135,7 @@ export class LogicBrain {
   }
 
   _trackAndOverlogic(rule) {
-    if (this.tracker) this.tracker.recordAction(rule.actionId);
+    if (this.tracker) this.tracker.recordAction(rule.actionId, rule.id);
     if (!this.recentRuleIds.includes(rule.id)) {
       this.recentRuleIds.push(rule.id);
       if (this.recentRuleIds.length >= 3) {

@@ -4,6 +4,19 @@
 import { GameDatabase } from './GameDatabase.js';
 import { AudioManager } from '../systems/AudioManager.js';
 
+const SAVE_VERSION = 2;
+const MIN_TEACH_NODE = 1;
+const MAX_TEACH_NODE = 4;
+const MAP_NODE_IDS = [
+  ['0_start'],
+  ['1_a', '1_b'],
+  ['2_a', '2_b'],
+  ['3_a', '3_b'],
+  ['4_a', '4_b'],
+  ['5_upgrade'],
+  ['6_boss', '6_apex'],
+];
+
 // Base stats from DESIGN.md §7.1 + extended upgrades
 function baseStats() {
   return {
@@ -92,9 +105,8 @@ class GameStateClass {
   }
 
   _newRule(condId, condVal, actId, prio, condId2 = null, condVal2 = null, operator = null, targetPriority = 'nearest') {
-    this._ruleCounter += 1;
     return {
-      id: `rule_${this._ruleCounter}`,
+      id: this._nextRuleId(),
       conditionId: condId,
       conditionValue: condVal,
       conditionId2: condId2,
@@ -105,6 +117,11 @@ class GameStateClass {
       targetPriority: targetPriority,
       enabled: true,
     };
+  }
+
+  _nextRuleId() {
+    this._ruleCounter += 1;
+    return `rule_${this._ruleCounter}`;
   }
 
   _initDefaultRules() {
@@ -471,6 +488,7 @@ class GameStateClass {
         unlockedActionIds: this.unlockedActionIds,
         rules: this.rules,
         _ruleCounter: this._ruleCounter,
+        saveVersion: SAVE_VERSION,
       };
       localStorage.setItem('overlogic_run_save', JSON.stringify(data));
     } catch (e) {
@@ -497,6 +515,7 @@ class GameStateClass {
       this.unlockedActionIds = data.unlockedActionIds ?? [];
       this.rules = data.rules ?? [];
       this._ruleCounter = data._ruleCounter ?? 0;
+      this.saveVersion = data.saveVersion ?? 1;
       return true;
     } catch (e) {
       console.error('Failed to load from localStorage', e);
@@ -525,8 +544,9 @@ class GameStateClass {
     try {
       const raw = localStorage.getItem(`overlogic_loadout_slot_${slotIndex}`);
       if (!raw) return false;
-      this._pushState();
       const loadedRules = JSON.parse(raw);
+      if (!Array.isArray(loadedRules)) return false;
+      this._pushState();
       const availConds = this.availableConditionIds();
       const availActs = this.availableActionIds();
       const prevLength = loadedRules.length;
@@ -564,6 +584,120 @@ class GameStateClass {
     const out = GameDatabase.actionsUnlockedByTeach(this.teachNode);
     for (const id of this.unlockedActionIds) if (!out.includes(id)) out.push(id);
     return out;
+  }
+
+  normalizeAfterDatabaseLoad() {
+    let changed = false;
+    if (!Array.isArray(this.mapNodes) || !this._mapShapeLooksCurrent()) {
+      const loadedMap = Array.isArray(this.mapNodes) ? this.mapNodes : [];
+      this._initMap();
+      this._mergeMapCompletion(loadedMap);
+      changed = true;
+    }
+    const maxColumn = Math.max(0, this.mapNodes.length - 1);
+    const clampedColumn = Math.max(0, Math.min(maxColumn, this.currentMapColumn | 0));
+    if (clampedColumn !== this.currentMapColumn) {
+      this.currentMapColumn = clampedColumn;
+      changed = true;
+    }
+    const activeCol = this.mapNodes[this.currentMapColumn] || [];
+    if (!activeCol.some(node => node.id === this.selectedNodeId)) {
+      this.selectedNodeId = activeCol[0]?.id || '0_start';
+      changed = true;
+    }
+    const clampedTeach = Math.max(MIN_TEACH_NODE, Math.min(MAX_TEACH_NODE, this.teachNode | 0));
+    if (clampedTeach !== this.teachNode) {
+      this.teachNode = clampedTeach;
+      changed = true;
+    }
+    const mergedStats = { ...baseStats(), ...(this.stats || {}) };
+    if (JSON.stringify(mergedStats) !== JSON.stringify(this.stats)) {
+      this.stats = mergedStats;
+      changed = true;
+    }
+    if (this.persistentHp !== null) {
+      const hp = Number(this.persistentHp);
+      const normalizedHp = Number.isFinite(hp) && hp > 0 ? Math.min(hp, this.stats.max_hp) : null;
+      if (normalizedHp !== this.persistentHp) {
+        this.persistentHp = normalizedHp;
+        changed = true;
+      }
+    }
+    const validConds = new Set(GameDatabase.conditions.keys());
+    const validActs = new Set(GameDatabase.actions.keys());
+    const normalizedUnlockedConditions = [...new Set(this.unlockedConditionIds || [])].filter(id => validConds.has(id));
+    const normalizedUnlockedActions = [...new Set(this.unlockedActionIds || [])].filter(id => validActs.has(id));
+    if (JSON.stringify(normalizedUnlockedConditions) !== JSON.stringify(this.unlockedConditionIds)) {
+      this.unlockedConditionIds = normalizedUnlockedConditions;
+      changed = true;
+    }
+    if (JSON.stringify(normalizedUnlockedActions) !== JSON.stringify(this.unlockedActionIds)) {
+      this.unlockedActionIds = normalizedUnlockedActions;
+      changed = true;
+    }
+    const beforeRulesJson = JSON.stringify(this.rules || []);
+    for (const rule of this.rules || []) {
+      const match = /^rule_(\d+)$/.exec(String(rule.id || ''));
+      if (match) this._ruleCounter = Math.max(this._ruleCounter, Number(match[1]) || 0);
+    }
+    const usedRuleIds = new Set();
+    this.rules = (this.rules || []).filter(rule => {
+      if (!validConds.has(rule.conditionId) || !validActs.has(rule.actionId)) return false;
+      if (rule.operator && !validConds.has(rule.conditionId2)) return false;
+      return true;
+    }).map(rule => {
+      let id = String(rule.id || '');
+      if (!id || usedRuleIds.has(id)) id = this._nextRuleId();
+      usedRuleIds.add(id);
+      const operator = rule.operator === 'and' || rule.operator === 'or' ? rule.operator : null;
+      return {
+        id,
+        conditionId: rule.conditionId,
+        conditionValue: rule.conditionValue ?? GameDatabase.getCondition(rule.conditionId)?.defaultValue ?? null,
+        conditionId2: operator ? rule.conditionId2 : null,
+        conditionValue2: operator ? (rule.conditionValue2 ?? GameDatabase.getCondition(rule.conditionId2)?.defaultValue ?? null) : null,
+        operator,
+        actionId: rule.actionId,
+        priority: Math.max(0, Math.min(100, rule.priority | 0)),
+        targetPriority: rule.targetPriority || 'nearest',
+        enabled: rule.enabled !== false,
+      };
+    });
+    if (JSON.stringify(this.rules) !== beforeRulesJson) changed = true;
+    if (this.rules.length === 0) {
+      this._initDefaultRules();
+      changed = true;
+    }
+    if (this.saveVersion !== SAVE_VERSION) {
+      this.saveVersion = SAVE_VERSION;
+      changed = true;
+    }
+    if (changed) {
+      this.saveToStorage();
+      this._emit('rules'); this._emit('stats'); this._emit('progress');
+    }
+    return changed;
+  }
+
+  _mapShapeLooksCurrent() {
+    if (!Array.isArray(this.mapNodes) || this.mapNodes.length !== MAP_NODE_IDS.length) return false;
+    return MAP_NODE_IDS.every((ids, colIndex) => {
+      const col = this.mapNodes[colIndex];
+      return Array.isArray(col) && ids.every(id => col.some(node => node && node.id === id));
+    });
+  }
+
+  _mergeMapCompletion(loadedMap) {
+    const byId = new Map();
+    for (const col of loadedMap) {
+      for (const node of col || []) byId.set(node.id, node);
+    }
+    for (const col of this.mapNodes) {
+      for (const node of col) {
+        const old = byId.get(node.id);
+        if (old && old.completed) node.completed = true;
+      }
+    }
   }
 
   isDemoCleared() {

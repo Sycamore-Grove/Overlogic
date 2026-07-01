@@ -1,88 +1,69 @@
-# OVERLOGIC ── 🤖 Design the Brain, Not the Hands.
+# OVERLOGIC
 
-[![Tech](https://img.shields.io/badge/Tech-Vanilla%20JS%20%7C%20Canvas%202D-00d2ff?style=for-the-badge)](index.html)
-[![Audio](https://img.shields.io/badge/Audio-Web%20Audio%20API-3eff9d?style=for-the-badge)](src/systems/AudioManager.js)
-[![License](https://img.shields.io/badge/License-MIT-b55cff?style=for-the-badge)](LICENSE)
+2D top-down auto-combat roguelike strategy game. You do not control the robot by reflexes; you program its combat brain, run the simulation, read the result, and refine the rule stack.
 
-> **2D top-down auto-combat roguelike strategy game.** 
-> You don't need high APM or fast reflexes. Your only task is: **Program the combat brain of your robot.**
-> Write logic rules (`IF` condition `THEN` action `PRIORITY` priority), watch the auto-simulation, analyze failures, adjust one rule, and turn defeat into victory!
+Live build: https://sycamore-grove.github.io/Overlogic/
 
----
+## What You Play
 
-## 👾 Key Features
+- Program prioritized `IF condition THEN action` rules with optional `AND` / `OR` clauses.
+- Choose target priorities such as nearest, lowest HP, caster, or boss.
+- Watch the robot execute rules in real time, with active-rule highlighting and diagnostics.
+- Clear a branching combat map with reward choices, repair nodes, passive upgrades, hazards, and boss variants.
+- Use failure reports and editor warnings to understand which rules fired, which never fired, and why they were blocked.
 
-* 🧠 **Logic Rule Editor (FSM)**: Build a prioritized list of rules. Supports compound `AND`/`OR` conditions, custom parameters, and targeting weights (Nearest, Lowest HP, Casting, Boss).
-* ⚙️ **System Configuration**: Real-time Master Volume slider, Mute toggle, and Camera Shake toggle (accessibility comfort) that persist across sessions.
-* 💾 **Loadout Slots**: 3 local save slots with glowing visual confirmations and quick keyboard shortcuts (`Ctrl + S` to save, `Enter`/`Space` to simulate).
-* 🏷️ **Cyberpunk Tooltips**: Hover over any condition, action, or map node to see interactive stats, description, and preview enemies before battle.
-* 🔍 **Active Rules Filter**: Easily search and filter active rules by keyword, action, or priority in real-time.
-* Roguelike Upgrades**: Pick passive chips (Reflective Plating, Nanite Repair, Superconductors, Emergency Recall) after each battle.
-* 📊 **Deterministic Failure Reports**: Get visual breakdown charts of rule execution, damage sources, and automated logic suggestions on defeat.
-* 🎨 **Procedural Audio & VFX**: All sound effects are synthesized dynamically via the **Web Audio API** (no static audio files). Graphics feature particle shockwaves, dynamic laser sights, and grid-based background circuit flows.
+## Current UX Features
 
----
+- Responsive editor, battle, reward, report, and victory screens for desktop and mobile.
+- Searchable condition/action lists and active rule filtering.
+- Three local loadout slots with quick save/load controls.
+- Persistent settings for volume, mute, and camera shake.
+- Tooltips for modules and map nodes.
+- Post-battle charts, action frequency, damage breakdowns, and contextual rule suggestions.
+- Save migration and bad-save recovery for older or corrupted local storage data.
 
-## 🚀 Quick Start
+## Run Locally
 
-Since the game uses native ES6 modules, it must be run via a local web server (due to browser CORS policies on `fetch()`).
+The game uses native ES modules and JSON data files, so run it through a local web server.
 
-### Method A: Python (Recommended)
-Run the following in the project root:
-```bash
-python -m http.server 8000
-```
-Open [http://localhost:8000](http://localhost:8000) in your browser.
-
-### Method B: Node.js
 ```bash
 npx serve .
 ```
 
----
+Then open the printed local URL, usually `http://localhost:3000`.
 
-## 🧠 Decision Loop
+If you prefer Python, run a local HTTP server from the repo root:
 
-The robot evaluates its logic queue every `0.15s` (1 Tick):
-
-```
-[Start Tick]
-     │
-     ▼
- Filter Active Rules ──> Skip on cooldown, insufficient energy, or no valid targets
-     │
-     ▼
- Evaluate Conditions ──> Find all rules where Condition 1 [AND/OR Condition 2] is true
-     │
-     ▼
- Execute & Highlight ──> Run the single highest-priority rule and flash it on the HUD
-     │
-     ▼
- [Fallback behavior] ──> If no rules are valid, slowly drift toward the nearest enemy
+```bash
+python -m http.server 8000
 ```
 
----
+## Verification
 
-## 🛠️ Logic Modules
+Node.js 24 is used in CI. The project has no build step.
 
-### 1. Conditions
-* `enemy_nearby [distance]`: True if nearest enemy is within range.
-* `enemy_far [distance]`: True if nearest enemy is further than range.
-* `hp_low [percent]`: True if robot HP is below threshold.
-* `hp_above [percent]`: True if robot HP is above threshold.
-* `energy_high [percent]`: True if robot energy is above threshold.
-* `enemy_casting`: True if any enemy is preparing an attack.
-* `on_hazard`: True if standing on a plasma hazard tile.
-* `surrounded [dist, count]`: True if multiple enemies are within distance.
-* `enemy_hp_low [percent]`: True if target HP is below threshold.
-* `boss_phase [phase]`: True if Boss is in specific phase (1-4).
+```bash
+npm run verify
+npm run balance
+```
 
-### 2. Actions
-* `basic_attack` (cd: 0.4s, cost: 0, range: 8m): Fires a plasma bolt.
-* `dash_toward` (cd: 3.0s, cost: 10, range: 3m): Teleports forward with invulnerability.
-* `dash_away` (cd: 3.0s, cost: 10, range: 3m): Teleports away from the target.
-* `shield` (cd: 8.0s, cost: 25, range: 0m): Deploys a barrier reducing damage by 70% for 2s.
-* `interrupt_shot` (cd: 5.0s, cost: 20, range: 8m): Fires an EMP bolt to disrupt casting enemies.
-* `overdrive` (cd: 15.0s, cost: 40, range: 0m): Increases attack speed by 50% and speed by 25% for 5s.
-* `repair` (cd: 12.0s, cost: 35, range: 0m): Heals 25 HP.
-* `drop_mine` (cd: 6.0s, cost: 20, range: 0m): Deploys a proximity explosive.
+`npm run verify` checks syntax, data contracts, save migration, reward flow, report suggestions, combat completion contracts, and a headless combat simulation.
+
+`npm run balance` runs deterministic headless simulations for the early battles and fails if the default rule set cannot clear Calibration.
+
+## Deployment
+
+GitHub Pages serves the static project directly from the repository. The workflow in `.github/workflows/verify.yml` runs the verification gate on pushes and pull requests so gameplay-critical regressions are caught before deployment.
+
+## Project Map
+
+- `index.html` and `style.css`: app shell and visual system.
+- `data/`: editable gameplay content for actions, conditions, enemies, battles, and rewards.
+- `src/core/`: state, map progress, battle lifecycle, and persistence.
+- `src/logic/`: condition evaluation, rule formatting, action execution, and rule selection.
+- `src/ui/`: editor, HUD, rewards, reports, victory screen, charts, and HTML escaping helpers.
+- `scripts/`: CI-safe verification and deterministic balance simulation.
+
+## Design Principle
+
+Every system should help the player answer one question: "Why did my robot do that?" Rules, diagnostics, reports, and rewards should make iteration faster without taking control away from the player.

@@ -6,6 +6,7 @@ import { GameState } from '../core/GameState.js';
 import { GameDatabase } from '../core/GameDatabase.js';
 import { GameManager } from '../core/GameManager.js';
 import { AudioManager } from '../systems/AudioManager.js';
+import { escapeHtml } from './safeHtml.js';
 
 export class LogicEditorUI {
   constructor() {
@@ -152,9 +153,9 @@ export class LogicEditorUI {
         continue;
       }
       const li = document.createElement('li');
-      li.innerHTML = `<span class="mod-name">${c.displayName}</span>` +
-        `<span class="mod-desc">${c.description}</span>` +
-        (c.parameterType !== 'none' ? `<span class="mod-meta">param: ${c.parameterType}</span>` : '');
+      li.innerHTML = `<span class="mod-name">${escapeHtml(c.displayName)}</span>` +
+        `<span class="mod-desc">${escapeHtml(c.description)}</span>` +
+        (c.parameterType !== 'none' ? `<span class="mod-meta">param: ${escapeHtml(c.parameterType)}</span>` : '');
       li.style.cursor = 'pointer';
       li.dataset.tooltipType = 'condition';
       li.dataset.tooltipId = id;
@@ -177,9 +178,9 @@ export class LogicEditorUI {
         continue;
       }
       const li = document.createElement('li');
-      li.innerHTML = `<span class="mod-name">${a.displayName}</span>` +
-        `<span class="mod-desc">${a.description}</span>` +
-        `<span class="mod-meta">cd ${a.cooldown}s · e${a.energyCost} · r${a.range}</span>`;
+      li.innerHTML = `<span class="mod-name">${escapeHtml(a.displayName)}</span>` +
+        `<span class="mod-desc">${escapeHtml(a.description)}</span>` +
+        `<span class="mod-meta">cd ${escapeHtml(a.cooldown)}s · e${escapeHtml(a.energyCost)} · r${escapeHtml(a.range)}</span>`;
       li.style.cursor = 'pointer';
       li.dataset.tooltipType = 'action';
       li.dataset.tooltipId = id;
@@ -237,7 +238,38 @@ export class LogicEditorUI {
         }
       }
     }
+
+    // 3. Last-battle feedback: show rules that existed but never actually fired.
+    const report = GameState.lastReport || {};
+    const activeRuleIds = new Set(Array.isArray(report.active_rule_ids) ? report.active_rule_ids : []);
+    const ruleUsage = report.rule_usage || {};
+    const diagnostics = report.rule_diagnostics || {};
+    if (activeRuleIds.size > 0) {
+      for (const r of enabledRules) {
+        if (!activeRuleIds.has(r.id) || ruleUsage[r.id] > 0) continue;
+        if (!warnings.has(r.id)) warnings.set(r.id, []);
+        const reason = this._dominantDiagnostic(diagnostics[r.id]);
+        warnings.get(r.id).push(`Last run: never fired${reason ? `; mostly blocked by ${reason}.` : '.'}`);
+      }
+    }
     return warnings;
+  }
+
+  _dominantDiagnostic(counts) {
+    if (!counts || typeof counts !== 'object') return '';
+    const labels = {
+      cooldown: 'cooldown',
+      energy: 'low energy',
+      condition_false: 'false condition',
+      overridden: 'higher-priority rules',
+      disabled: 'disabled state',
+    };
+    let best = null;
+    for (const [key, count] of Object.entries(counts)) {
+      if (key === 'executing') continue;
+      if (!best || count > best.count) best = { key, count };
+    }
+    return best ? (labels[best.key] || best.key) : '';
   }
 
   renderRules() {
@@ -393,7 +425,7 @@ export class LogicEditorUI {
     opSel.addEventListener('change', () => {
       GameState.setRuleOperator(r.id, opSel.value);
       AudioManager.play('button_click');
-      this.refreshList(); // refresh list to show/hide condition 2 fields!
+      this.renderRules(); // refresh list to show/hide condition 2 fields
     });
     row.appendChild(opSel);
 
@@ -503,7 +535,7 @@ export class LogicEditorUI {
       warnSpan.addEventListener('mouseenter', () => {
         const tooltip = document.getElementById('custom-tooltip');
         if (!tooltip) return;
-        tooltip.innerHTML = warnings.map(w => `<div style="margin-bottom: 4px; color: #ffb938; font-weight: bold;">• ${w}</div>`).join('');
+        tooltip.innerHTML = warnings.map(w => `<div style="margin-bottom: 4px; color: #ffb938; font-weight: bold;">• ${escapeHtml(w)}</div>`).join('');
         tooltip.classList.remove('hidden');
         tooltip.style.display = 'block';
         
@@ -546,7 +578,6 @@ export class LogicEditorUI {
     clone.addEventListener('mouseenter', () => { clone.style.color = 'var(--accent2)'; clone.style.transform = 'scale(1.15)'; });
     clone.addEventListener('mouseleave', () => { clone.style.color = 'var(--muted)'; clone.style.transform = 'scale(1)'; });
     clone.addEventListener('click', () => {
-      GameState.pushUndoState();
       GameState.addRule(
         r.conditionId, r.conditionValue, r.actionId, Math.max(0, r.priority - 1),
         r.conditionId2, r.conditionValue2, r.operator, r.targetPriority

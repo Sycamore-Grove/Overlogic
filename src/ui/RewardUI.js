@@ -7,6 +7,7 @@ import { GameDatabase } from '../core/GameDatabase.js';
 import { GameManager } from '../core/GameManager.js';
 import { buildRewardOptions, buildUpgradeOptions, rewardDescription } from '../systems/RewardManager.js';
 import { AudioManager } from '../systems/AudioManager.js';
+import { escapeHtml } from './safeHtml.js';
 
 const TYPE_ICONS = {
   passive: '⚙️',
@@ -39,7 +40,7 @@ export class RewardUI {
     if (oldBar) oldBar.remove();
 
     // Current status summary bar (inserted before the options grid)
-    const hpPct = Math.round((GameState.persistentHp || GameState.stats.max_hp) / GameState.stats.max_hp * 100);
+    const hpPct = Math.round((GameState.persistentHp ?? GameState.stats.max_hp) / GameState.stats.max_hp * 100);
     const summaryBar = document.createElement('div');
     summaryBar.className = 'reward-summary-bar';
     summaryBar.innerHTML = `
@@ -72,9 +73,9 @@ export class RewardUI {
       const icon = TYPE_ICONS[r.rewardType] || '✦';
       const typeLabel = r.rewardType.replace('_', ' ').toUpperCase();
       card.innerHTML =
-        `<span class="r-type">${icon} ${typeLabel}</span>` +
-        `<span class="r-name">${r.displayName}</span>` +
-        `<span class="r-desc">${rewardDescription(r)}</span>` +
+        `<span class="r-type">${icon} ${escapeHtml(typeLabel)}</span>` +
+        `<span class="r-name">${escapeHtml(r.displayName)}</span>` +
+        `<span class="r-desc">${escapeHtml(rewardDescription(r))}</span>` +
         `<span class="r-pick-hint">Click to Select</span>`;
       const choose = () => {
         AudioManager.play('rule_add');
